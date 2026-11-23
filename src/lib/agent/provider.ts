@@ -33,7 +33,9 @@ export async function getAgentProviderConfig(env: CloudflareEnv): Promise<AgentP
 	}
 	if (env.AI) { const model = env.AI_MODEL || DEFAULT_CLOUDFLARE_MODEL; return { provider: "cloudflare", preset: "openai", baseUrl: "", apiKey: "", model, models: [model], rates, source: "environment" }; }
 	if (env.AI_BASE_URL && env.AI_API_KEY) { const model = env.AI_MODEL || "gpt-4o-mini"; return { provider: "compatible", preset: "custom", baseUrl: env.AI_BASE_URL, apiKey: env.AI_API_KEY, model, models: [model], rates, source: "environment" }; }
-	return { provider: "cloudflare", preset: "openai", baseUrl: "", apiKey: "", model: DEFAULT_CLOUDFLARE_MODEL, models: [DEFAULT_CLOUDFLARE_MODEL], rates, source: "default" };
+	// Nothing set up and no Workers AI binding (Node and FlareSuite Cloud): start from an OpenAI-compatible provider that
+	// still needs a key, rather than Workers AI, which cannot work here.
+	return { provider: "compatible", preset: "openai", baseUrl: PROVIDER_BASE_URLS.openai, apiKey: "", model: "", models: [], rates, source: "default" };
 }
 
 export async function getAgentProviderPublicConfig(env: CloudflareEnv): Promise<AgentProviderPublicConfig> {

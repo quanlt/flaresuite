@@ -1,6 +1,6 @@
 import { authFetch } from "@/lib/auth/client";
 import { PROVIDER_BASE_URLS } from "@/lib/agent/provider-constants";
-import type { AgentProviderPreset } from "@/lib/agent/provider-types";
+import type { AgentProviderPreset, AgentProviderPublicConfig } from "@/lib/agent/provider-types";
 import type { AgentAdminForm, AgentAdminModelsResponse, AgentAdminSettingsResponse, AgentEnabledResponse } from "./types";
 
 export const PROVIDER_PRESETS: { id: AgentProviderPreset; label: string }[] = [
@@ -10,6 +10,15 @@ export const PROVIDER_PRESETS: { id: AgentProviderPreset; label: string }[] = [
 	{ id: "groq", label: "Groq" },
 	{ id: "custom", label: "Custom endpoint" },
 ];
+
+/** "OpenAI", "Cloudflare Workers AI", or the host of a custom endpoint, for the status line. */
+export function providerLabel(config: Pick<AgentProviderPublicConfig, "provider" | "preset" | "baseUrl">): string {
+	if (config.provider === "cloudflare") return "Cloudflare Workers AI";
+	if (config.preset === "custom") {
+		try { return new URL(config.baseUrl).host; } catch { return config.baseUrl; }
+	}
+	return PROVIDER_PRESETS.find((item) => item.id === config.preset)?.label ?? config.preset;
+}
 
 export function baseUrlForPreset(preset: AgentProviderPreset, current = "") {
 	return preset === "custom" ? current : PROVIDER_BASE_URLS[preset];
