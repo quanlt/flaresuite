@@ -5,6 +5,7 @@ import { requireAwsConfig } from "@/lib/aws/config";
 import { sendSesEmail } from "@/lib/aws/ses";
 import { getEmailAddress } from "@/lib/email/address";
 import { fetchSentMessageId, resendClient, resendOmittedHeaders, resendSetsMessageId, type ResendClient } from "@/lib/email/resend-api";
+import { isCloudManagedMail } from "@/lib/email/managed-mail";
 import type { OutboundProviderConfig, OutboundProviderMessage, ResendKeyStatus } from "@/lib/email/outbound-provider-types";
 
 /**
@@ -36,6 +37,8 @@ export async function getResendClient(env: CloudflareEnv): Promise<ResendClient>
 
 /** The provider for the domain a message is sent from. */
 export async function getOutboundProviderConfig(env: CloudflareEnv, fromAddress: string): Promise<OutboundProviderConfig> {
+	// FlareSuite Cloud: the send binding is the SMTP login the Cloud issued for this workspace's domain.
+	if (isCloudManagedMail(env)) return { provider: "cloudflare" };
 	const hostname = getEmailAddress(fromAddress).split("@")[1]?.toLowerCase();
 	const [domain] = hostname
 		? await getDb(env).select({ provider: domains.sendingProvider }).from(domains).where(eq(domains.hostname, hostname)).limit(1)

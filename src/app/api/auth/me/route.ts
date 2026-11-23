@@ -4,6 +4,7 @@ import { getEnv } from "@/lib/cloudflare";
 import { hasPrimaryDomain, userHasMailboxes } from "@/lib/user";
 import { getLicenseEntitlements } from "@/lib/licenses/service";
 import { hasCloudflareCredentials, isNodeRuntime } from "@/lib/runtime";
+import { cloudDnsUrl, isCloudManagedMail } from "@/lib/email/managed-mail";
 
 export async function GET(request: Request) {
 	const env = getEnv();
@@ -45,6 +46,7 @@ export async function GET(request: Request) {
 		},
 		runtime: isNodeRuntime(env) ? "node" : "cloudflare",
 		managesDns: hasCloudflareCredentials(env),
+		cloudMail: isCloudManagedMail(env) ? { dnsUrl: cloudDnsUrl(env) } : null,
 		hasMailboxes,
 		isSetup,
 	});

@@ -78,6 +78,10 @@ interface CloudflareEnv {
 	MANAGED_PLAN?: string;
 	/** FlareSuite Cloud: account seats of the managed plan; empty or 0 is unlimited. */
 	MANAGED_SEAT_LIMIT?: string;
+	/** FlareSuite Cloud: "1" when the Cloud runs this workspace's mail (sends through SMTP_URL, receives on /api/inbound). */
+	MANAGED_MAIL?: string;
+	/** FlareSuite Cloud: page of the Cloud dashboard where the customer adds this workspace's DNS records. */
+	CLOUD_DNS_URL?: string;
 	/** When set, the first-run setup only accepts a browser that opened /api/setup/claim?token=<this>. */
 	SETUP_TOKEN?: string;
 	/** "node" when served by the self-hosted runtime in server/; unset on Workers. */

@@ -18,6 +18,8 @@ await build({
 			export { applyMigrations } from "./server/runtime/migrate.ts";
 			export { POST as bootstrap } from "./src/app/api/setup/bootstrap/route.ts";
 			export { verifyPassword } from "./src/lib/auth/password.ts";
+			export { isCloudManagedMail, cloudDnsUrl } from "./src/lib/email/managed-mail.ts";
+			export { getOutboundProviderConfig } from "./src/lib/email/outbound-provider.ts";
 		`,
 		resolveDir: root,
 		sourcefile: "cloud-bootstrap-entry.ts",
@@ -27,7 +29,7 @@ await build({
 	alias: { "next/headers": "next/headers.js", "next/server": "next/server.js", "cloudflare:workers": "./server/runtime/cloudflare-workers.ts" },
 	logLevel: "silent",
 });
-const { SqliteDatabase, applyMigrations, bootstrap, verifyPassword } = await import(pathToFileURL(join(directory, "entry.mjs")).href);
+const { SqliteDatabase, applyMigrations, bootstrap, verifyPassword, isCloudManagedMail, cloudDnsUrl, getOutboundProviderConfig } = await import(pathToFileURL(join(directory, "entry.mjs")).href);
 const HASH = bcrypt.hashSync("correct-horse", 4);
 
 async function fixture(t, extraEnv = { SETUP_TOKEN: "tok-123" }) {
@@ -81,4 +83,27 @@ test("accepts only a bcrypt hash and a valid address", async (t) => {
 	assert.equal((await f.call({ ...BODY, email: "admin@localhost" })).status, 400);
 	assert.equal((await f.call({ ...BODY, name: " " })).status, 400);
 	assert.equal((await f.call({ ...BODY, resetEmail: "nope" })).status, 400);
+});
+
+test("a Cloud-run workspace receives on its domain at once and sends through the issued SMTP login", async (t) => {
+	const f = await fixture(t, { SETUP_TOKEN: "tok-123", MANAGED_MAIL: "1", CLOUD_DNS_URL: "https://flaresuite.ai/dashboard/w/ws_1/dns" });
+	assert.equal((await f.call(BODY)).status, 200);
+	assert.equal(f.database.db.prepare("SELECT status FROM domains").get().status, "active");
+	// The domain has no sending provider of its own; the Cloud's SMTP login sends for it.
+	assert.deepEqual(await getOutboundProviderConfig(globalThis.__mailflareNodeEnv, "Ada <admin@acme.com>"), { provider: "cloudflare" });
+});
+
+test("without the Cloud a skipped-DNS domain stays pending and has no sender", async (t) => {
+	const f = await fixture(t);
+	assert.equal((await f.call(BODY)).status, 200);
+	assert.equal(f.database.db.prepare("SELECT status FROM domains").get().status, "pending");
+	await assert.rejects(getOutboundProviderConfig(globalThis.__mailflareNodeEnv, "admin@acme.com"), /Sending is not set up/);
+});
+
+test("the Cloud DNS link is only used in Cloud mode and only as an http(s) URL", () => {
+	assert.equal(isCloudManagedMail({ MANAGED_MAIL: "1" }), true);
+	assert.equal(isCloudManagedMail({ MANAGED_MAIL: "0" }), false);
+	assert.equal(cloudDnsUrl({ MANAGED_MAIL: "1", CLOUD_DNS_URL: "https://flaresuite.ai/x" }), "https://flaresuite.ai/x");
+	assert.equal(cloudDnsUrl({ MANAGED_MAIL: "1", CLOUD_DNS_URL: "javascript:alert(1)" }), null);
+	assert.equal(cloudDnsUrl({ CLOUD_DNS_URL: "https://flaresuite.ai/x" }), null);
 });

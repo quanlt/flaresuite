@@ -13,6 +13,8 @@ import type { DomainProvisioningChanges } from "@/lib/domains/types";
 import { ensureMailboxDomainRouting } from "@/lib/mailboxes/domain-addresses";
 import { ensureBookingUsername } from "@/lib/booking/username";
 import { readJsonBody } from "@/lib/http/request";
+import { isCloudManagedMail } from "@/lib/email/managed-mail";
+import { domains } from "@/db/schema";
 import { normalizeHostname, isValidHostname } from "@/lib/domains/utils";
 
 /**
@@ -73,6 +75,8 @@ export async function POST(request: Request) {
 		await ensureBookingUsername(env, userId, email);
 		const added = await addDomainForUser(env, userId, domainName, { skipDns: true });
 		changes = added.changes;
+		// The Cloud delivers this domain's mail, so it receives as soon as its DNS points at the Cloud's mail service.
+		if (isCloudManagedMail(env)) await db.update(domains).set({ status: "active" }).where(eq(domains.id, added.domain.id));
 		const mailboxId = newId("mbx");
 		await db.insert(mailboxes).values({ id: mailboxId, userId, domainId: added.domain.id, localPart, displayName: parsed.data.name });
 		await ensureMailboxDomainRouting(env, db, { id: mailboxId, domainId: added.domain.id, localPart, useAllDomains: true });

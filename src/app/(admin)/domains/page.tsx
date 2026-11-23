@@ -33,9 +33,11 @@ export default function DomainsPage() {
   // Self-hosted installs without Cloudflare credentials manage DNS by hand.
   const { data: me } = useQuery({
     queryKey: ["me"],
-    queryFn: async () => (await (await authFetch("/api/auth/me")).json()) as { managesDns?: boolean },
+    queryFn: async () => (await (await authFetch("/api/auth/me")).json()) as { managesDns?: boolean; cloudMail?: { dnsUrl: string | null } | null },
   });
   const managesDns = me?.managesDns ?? true;
+  // FlareSuite Cloud runs this workspace's mail; DNS is set up from the Cloud dashboard.
+  const cloudMail = me?.cloudMail ?? null;
   const [domainCheck, setDomainCheck] = useState<DomainPreflight | null>(null);
   const [domainChecking, setDomainChecking] = useState(false);
   const [skipDns, setSkipDns] = useState(false);
@@ -272,6 +274,33 @@ export default function DomainsPage() {
 
     setDomainCheck(result.domain);
   };
+
+  if (cloudMail) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-medium">{t("domains.title")}</h1>
+        </div>
+        <section className="rounded-xl border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-950" data-testid="cloud-mail">
+          <h2 className="text-base font-medium">{t("domains.cloudMailTitle")}</h2>
+          <p className="mt-1 text-sm text-neutral-500">{t("domains.cloudMailBody")}</p>
+          {cloudMail.dnsUrl && (
+            <Button asChild className="mt-4">
+              <a href={cloudMail.dnsUrl} target="_blank" rel="noopener noreferrer">{t("domains.cloudMailButton")}</a>
+            </Button>
+          )}
+        </section>
+        <ul className="divide-y divide-neutral-200 rounded-xl border border-neutral-200 dark:divide-neutral-800 dark:border-neutral-800">
+          {(data?.domains ?? []).map((d) => (
+            <li key={d.id} className="flex items-center justify-between px-4 py-3 text-sm">
+              <span className="font-medium">{d.hostname}</span>
+            </li>
+          ))}
+        </ul>
+        <p className="text-sm text-neutral-500">{t("domains.cloudMailMoreDomains")}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
