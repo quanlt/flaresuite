@@ -11,10 +11,11 @@ export const LICENSE_PLANS: LicensePlan[] = [
 		name: "Pro",
 		price: 29,
 		originalPrice: 39,
+		priceNoteKey: "licenses.perAccount",
 		descriptionKey: "licenses.pro.description",
 		featureKeys: ["licenses.pro.feature1", "licenses.pro.feature2", "licenses.keepVersion"],
 		icon: Sparkles,
-		checkoutUrl: "https://app.paymug.co/buy/mailflare-pro",
+		checkoutUrl: "https://flaresuite.ai/buy/pro",
 	},
 	{
 		name: "Team",
@@ -23,7 +24,7 @@ export const LICENSE_PLANS: LicensePlan[] = [
 		descriptionKey: "licenses.team.description",
 		featureKeys: ["licenses.team.feature1", "licenses.team.feature2", "licenses.team.feature3", "licenses.keepVersion"],
 		icon: Building2,
-		checkoutUrl: "https://app.paymug.co/buy/mailflare-team",
+		checkoutUrl: "https://flaresuite.ai/buy/team",
 	},
 ];
 

@@ -3164,5 +3164,6 @@
 	"mailGuide.settings": "服务器设置",
 	"notFound.title": "此页面不存在",
 	"notFound.body": "链接可能已失效或输入有误。",
-	"notFound.home": "前往收件箱"
+	"notFound.home": "前往收件箱",
+	"licenses.perAccount": "每个账户"
 }

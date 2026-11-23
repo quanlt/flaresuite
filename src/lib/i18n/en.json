@@ -3182,5 +3182,6 @@
 	"mailGuide.settings": "Server settings",
 	"notFound.title": "This page doesn't exist",
 	"notFound.body": "The link may be old or mistyped.",
-	"notFound.home": "Go to Inbox"
+	"notFound.home": "Go to Inbox",
+	"licenses.perAccount": "per account"
 }

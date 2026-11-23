@@ -3198,5 +3198,6 @@
 	"mailGuide.settings": "Configuración del servidor",
 	"notFound.title": "Esta página no existe",
 	"notFound.body": "Puede que el enlace sea antiguo o esté mal escrito.",
-	"notFound.home": "Ir a la bandeja de entrada"
+	"notFound.home": "Ir a la bandeja de entrada",
+	"licenses.perAccount": "por cuenta"
 }

@@ -1,8 +1,9 @@
 import type { LicensePlan } from "./types";
 
+/** Products on the FlareSuite license server; must equal LICENSE_PRODUCT_IDS in flaresuite-cloud/src/licenses.ts. */
 export const LICENSE_PRODUCT_IDS: Record<Exclude<LicensePlan, "community">, string> = {
-	pro: "ebafa58f-af9f-4b8a-a48d-6cfd44dd2053",
-	team: "6e42b54c-3221-4f8f-93a7-bab494f9e224",
+	pro: "a48777ce-1ef9-4c59-b976-0e66bfa913d9",
+	team: "ead97201-8e9b-4fe1-bee1-ed3a730e6598",
 };
 
 export const LICENSE_STATUS_CHANGED_EVENT = "mailflare:license-status-changed";

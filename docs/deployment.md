@@ -210,4 +210,4 @@ When adding a schema change, create a new uniquely named SQL file in `drizzle/mi
 
 ## Branding license
 
-Activate a purchased Pro or Team key from **Admin → Licenses**. FlareSuite sends the key to Paymug and stores only a one-way hash and the activation state. Apply all D1 migrations before activating a license.
+Buy a Pro or Team key at https://flaresuite.ai/buy/pro or https://flaresuite.ai/buy/team and activate it from **Admin → Licenses**. FlareSuite checks the key with the license server at flaresuite.ai and stores only a one-way hash and the activation state. A key works on one installation at a time; **Deactivate** frees it for another. Apply all D1 migrations before activating a license.

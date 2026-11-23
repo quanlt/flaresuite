@@ -3182,5 +3182,6 @@
 	"mailGuide.settings": "تنظیمات سرور",
 	"notFound.title": "این صفحه وجود ندارد",
 	"notFound.body": "ممکن است پیوند قدیمی باشد یا اشتباه تایپ شده باشد.",
-	"notFound.home": "رفتن به صندوق ورودی"
+	"notFound.home": "رفتن به صندوق ورودی",
+	"licenses.perAccount": "برای هر حساب"
 }

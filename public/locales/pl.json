@@ -3214,5 +3214,6 @@
 	"mailGuide.settings": "Ustawienia serwera",
 	"notFound.title": "Ta strona nie istnieje",
 	"notFound.body": "Link może być nieaktualny lub błędnie wpisany.",
-	"notFound.home": "Przejdź do skrzynki odbiorczej"
+	"notFound.home": "Przejdź do skrzynki odbiorczej",
+	"licenses.perAccount": "za konto"
 }

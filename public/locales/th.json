@@ -3178,5 +3178,6 @@
 	"mailGuide.settings": "การตั้งค่าเซิร์ฟเวอร์",
 	"notFound.title": "ไม่มีหน้านี้",
 	"notFound.body": "ลิงก์อาจเก่าหรือพิมพ์ผิด",
-	"notFound.home": "ไปที่กล่องจดหมาย"
+	"notFound.home": "ไปที่กล่องจดหมาย",
+	"licenses.perAccount": "ต่อบัญชี"
 }

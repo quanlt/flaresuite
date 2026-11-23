@@ -10,6 +10,8 @@ export type LicensePlan = {
 	icon: LucideIcon;
 	checkoutUrl: string;
 	originalPrice?: number,
+	/** Shown after the price, e.g. "per account" for Pro. */
+	priceNoteKey?: TranslationKey;
 };
 
 export type LicenseAction = "activate" | "validate" | "deactivate";

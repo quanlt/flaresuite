@@ -3182,5 +3182,6 @@
 	"mailGuide.settings": "ਸਰਵਰ ਸੈਟਿੰਗਾਂ",
 	"notFound.title": "ਇਹ ਪੰਨਾ ਮੌਜੂਦ ਨਹੀਂ ਹੈ",
 	"notFound.body": "ਲਿੰਕ ਪੁਰਾਣਾ ਜਾਂ ਗਲਤ ਟਾਈਪ ਕੀਤਾ ਹੋ ਸਕਦਾ ਹੈ।",
-	"notFound.home": "ਇਨਬਾਕਸ 'ਤੇ ਜਾਓ"
+	"notFound.home": "ਇਨਬਾਕਸ 'ਤੇ ਜਾਓ",
+	"licenses.perAccount": "ਪ੍ਰਤੀ ਖਾਤਾ"
 }

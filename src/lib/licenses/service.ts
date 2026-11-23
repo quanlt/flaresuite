@@ -3,8 +3,8 @@ import packageJson from "../../../package.json";
 import { getDb } from "@/db";
 import { licenseSettings } from "@/db/schema";
 import { LICENSE_PRODUCT_IDS } from "./constants";
-import { callPaymugLicenseApi } from "./paymug";
-import type { LicenseEntitlements, LicensePlan, LicenseStatus, PaymugLicenseAction } from "./types";
+import { callLicenseServer } from "./license-server";
+import type { LicenseEntitlements, LicensePlan, LicenseStatus, LicenseServerAction } from "./types";
 import { hashLicenseKey, normalizeLicensePlan, parseFeatures, readManagedPlan } from "./utils";
 
 const LICENSE_SETTINGS_ID = "default";
@@ -74,9 +74,9 @@ export async function getLicenseEntitlements(env: CloudflareEnv): Promise<Licens
 	}
 }
 
-async function updateLicenseFromPaymug(
+async function updateLicenseFromServer(
 	env: CloudflareEnv,
-	action: PaymugLicenseAction,
+	action: LicenseServerAction,
 	licenseKey: string,
 	instanceUrl: string,
 	requestedPlan?: Exclude<LicensePlan, "community">,
@@ -95,7 +95,7 @@ async function updateLicenseFromPaymug(
 			: null;
 	if (!expectedPlan) throw new Error("Choose the license product to activate");
 
-	const result = await callPaymugLicenseApi(
+	const result = await callLicenseServer(
 		action,
 		action === "deactivate"
 			? { productId: LICENSE_PRODUCT_IDS[expectedPlan], instanceId: settings.instanceId }
@@ -111,7 +111,7 @@ async function updateLicenseFromPaymug(
 	const db = getDb(env);
 
 	if (action === "deactivate") {
-		if (result.state !== "deactivated") throw new Error("Paymug did not confirm deactivation");
+		if (result.state !== "deactivated") throw new Error("The license server did not confirm deactivation");
 		await db
 			.update(licenseSettings)
 			.set({
@@ -166,13 +166,13 @@ export function activateLicense(
 	instanceUrl: string,
 	plan: Exclude<LicensePlan, "community">,
 ) {
-	return updateLicenseFromPaymug(env, "activate", licenseKey, instanceUrl, plan);
+	return updateLicenseFromServer(env, "activate", licenseKey, instanceUrl, plan);
 }
 
 export function validateLicense(env: CloudflareEnv, licenseKey: string, instanceUrl: string) {
-	return updateLicenseFromPaymug(env, "validate", licenseKey, instanceUrl);
+	return updateLicenseFromServer(env, "validate", licenseKey, instanceUrl);
 }
 
 export function deactivateLicense(env: CloudflareEnv) {
-	return updateLicenseFromPaymug(env, "deactivate", "", "");
+	return updateLicenseFromServer(env, "deactivate", "", "");
 }

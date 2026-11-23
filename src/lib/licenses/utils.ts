@@ -1,4 +1,4 @@
-import type { LicensePlan, LicenseState, PaymugLicenseResponse } from "./types";
+import type { LicensePlan, LicenseState, LicenseServerResponse } from "./types";
 import { LICENSE_PRODUCT_IDS } from "./constants";
 
 export async function hashLicenseKey(licenseKey: string): Promise<string> {
@@ -17,18 +17,18 @@ export function parseFeatures(value: string): string[] {
 	}
 }
 
-export function parsePaymugLicenseResponse(value: unknown): PaymugLicenseResponse {
-	if (!value || typeof value !== "object") throw new Error("Paymug returned an invalid license response");
+export function parseLicenseServerResponse(value: unknown): LicenseServerResponse {
+	if (!value || typeof value !== "object") throw new Error("The license server returned an invalid license response");
 	const response = value as Record<string, unknown>;
 	const states: LicenseState[] = ["active", "invalid", "expired", "deactivated"];
 
 	if (typeof response.valid !== "boolean" || !states.includes(response.state as LicenseState)) {
-		throw new Error("Paymug returned an invalid license response");
+		throw new Error("The license server returned an invalid license response");
 	}
 
 	return {
 		valid: response.valid,
-		state: response.state as PaymugLicenseResponse["state"],
+		state: response.state as LicenseServerResponse["state"],
 		instanceId: typeof response.instanceId === "string" ? response.instanceId : undefined,
 		productId: typeof response.productId === "string" ? response.productId : undefined,
 		plan: typeof response.plan === "string" ? response.plan : undefined,

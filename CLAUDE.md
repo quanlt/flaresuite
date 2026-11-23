@@ -179,7 +179,7 @@ Each document is a `drive_items` file whose `contentType` is `application/vnd.fl
 
 ### Licensing gates branding
 
-Pro/Team keys are validated against Paymug (`src/lib/licenses/`); only a one-way key hash is stored. Without an active license the app falls back to the default name, icon, and favicon, and custom branding is unavailable. `getLicenseEntitlements` is the gate.
+Pro/Team keys are sold and validated by the FlareSuite license server at flaresuite.ai (`src/lib/licenses/license-server.ts`, served by flaresuite-cloud `src/licenses.ts`; the product ids in `constants.ts` must match there); only a one-way key hash is stored. FlareSuite Cloud workspaces skip it: `MANAGED_PLAN` grants the plan. Without an active license the app falls back to the default name, icon, and favicon, and custom branding is unavailable. `getLicenseEntitlements` is the gate.
 
 ### Self-update
 

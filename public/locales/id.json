@@ -3164,5 +3164,6 @@
 	"mailGuide.settings": "Pengaturan server",
 	"notFound.title": "Halaman ini tidak ada",
 	"notFound.body": "Tautannya mungkin sudah lama atau salah ketik.",
-	"notFound.home": "Buka Kotak Masuk"
+	"notFound.home": "Buka Kotak Masuk",
+	"licenses.perAccount": "per akun"
 }

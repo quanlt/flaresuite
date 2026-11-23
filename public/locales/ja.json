@@ -3164,5 +3164,6 @@
 	"mailGuide.settings": "サーバー設定",
 	"notFound.title": "このページは存在しません",
 	"notFound.body": "リンクが古いか、入力が間違っている可能性があります。",
-	"notFound.home": "受信トレイへ"
+	"notFound.home": "受信トレイへ",
+	"licenses.perAccount": "アカウントごと"
 }

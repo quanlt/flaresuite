@@ -42,6 +42,9 @@ export default async function LicensesPage() {
                   <p className="mt-2 text-6xl text-neutral-950 flex">
                     <span className="text-[12px] mt-2">$</span>
                     <b>{plan.price}</b>
+                    {plan.priceNoteKey && (
+                      <span className="ml-2 self-end pb-2 text-sm text-neutral-500">{t(plan.priceNoteKey)}</span>
+                    )}
                     {plan.originalPrice && (
                       <span className="absolute right-0 bottom-6 line-through text-base opacity-40">
                         ${plan.originalPrice}

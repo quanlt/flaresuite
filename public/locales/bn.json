@@ -3182,5 +3182,6 @@
 	"mailGuide.settings": "সার্ভার সেটিংস",
 	"notFound.title": "এই পৃষ্ঠাটি নেই",
 	"notFound.body": "লিঙ্কটি পুরোনো বা ভুল টাইপ করা হতে পারে।",
-	"notFound.home": "ইনবক্সে যান"
+	"notFound.home": "ইনবক্সে যান",
+	"licenses.perAccount": "প্রতি অ্যাকাউন্ট"
 }

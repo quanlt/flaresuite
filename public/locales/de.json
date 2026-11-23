@@ -3182,5 +3182,6 @@
 	"mailGuide.settings": "Servereinstellungen",
 	"notFound.title": "Diese Seite gibt es nicht",
 	"notFound.body": "Der Link ist vielleicht veraltet oder falsch geschrieben.",
-	"notFound.home": "Zum Posteingang"
+	"notFound.home": "Zum Posteingang",
+	"licenses.perAccount": "pro Konto"
 }

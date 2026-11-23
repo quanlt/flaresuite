@@ -3182,5 +3182,6 @@
 	"mailGuide.settings": "સર્વર સેટિંગ્સ",
 	"notFound.title": "આ પેજ અસ્તિત્વમાં નથી",
 	"notFound.body": "લિંક જૂની અથવા ખોટી ટાઇપ થયેલી હોઈ શકે છે.",
-	"notFound.home": "ઇનબોક્સ પર જાઓ"
+	"notFound.home": "ઇનબોક્સ પર જાઓ",
+	"licenses.perAccount": "પ્રતિ એકાઉન્ટ"
 }

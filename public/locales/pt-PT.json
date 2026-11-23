@@ -3198,5 +3198,6 @@
 	"mailGuide.settings": "Definições do servidor",
 	"notFound.title": "Esta página não existe",
 	"notFound.body": "A ligação pode estar desatualizada ou mal escrita.",
-	"notFound.home": "Ir para a Caixa de entrada"
+	"notFound.home": "Ir para a Caixa de entrada",
+	"licenses.perAccount": "por conta"
 }

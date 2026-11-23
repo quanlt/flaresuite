@@ -3182,5 +3182,6 @@
 	"mailGuide.settings": "Serverinstellingen",
 	"notFound.title": "Deze pagina bestaat niet",
 	"notFound.body": "De link is misschien oud of verkeerd getypt.",
-	"notFound.home": "Naar Postvak IN"
+	"notFound.home": "Naar Postvak IN",
+	"licenses.perAccount": "per account"
 }

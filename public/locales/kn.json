@@ -3182,5 +3182,6 @@
 	"mailGuide.settings": "ಸರ್ವರ್ ಸೆಟ್ಟಿಂಗ್‌ಗಳು",
 	"notFound.title": "ಈ ಪುಟ ಅಸ್ತಿತ್ವದಲ್ಲಿಲ್ಲ",
 	"notFound.body": "ಲಿಂಕ್ ಹಳೆಯದಾಗಿರಬಹುದು ಅಥವಾ ತಪ್ಪಾಗಿ ಟೈಪ್ ಆಗಿರಬಹುದು.",
-	"notFound.home": "ಇನ್‌ಬಾಕ್ಸ್‌ಗೆ ಹೋಗಿ"
+	"notFound.home": "ಇನ್‌ಬಾಕ್ಸ್‌ಗೆ ಹೋಗಿ",
+	"licenses.perAccount": "ಪ್ರತಿ ಖಾತೆಗೆ"
 }

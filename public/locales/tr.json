@@ -3182,5 +3182,6 @@
 	"mailGuide.settings": "Sunucu ayarları",
 	"notFound.title": "Bu sayfa yok",
 	"notFound.body": "Bağlantı eski ya da yanlış yazılmış olabilir.",
-	"notFound.home": "Gelen Kutusu'na git"
+	"notFound.home": "Gelen Kutusu'na git",
+	"licenses.perAccount": "hesap başına"
 }

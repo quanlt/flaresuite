@@ -3198,5 +3198,6 @@
 	"mailGuide.settings": "Paramètres du serveur",
 	"notFound.title": "Cette page n'existe pas",
 	"notFound.body": "Le lien est peut-être ancien ou mal saisi.",
-	"notFound.home": "Aller à la boîte de réception"
+	"notFound.home": "Aller à la boîte de réception",
+	"licenses.perAccount": "par compte"
 }

@@ -3182,5 +3182,6 @@
 	"mailGuide.settings": "സെർവർ ക്രമീകരണങ്ങൾ",
 	"notFound.title": "ഈ പേജ് നിലവിലില്ല",
 	"notFound.body": "ലിങ്ക് പഴയതോ തെറ്റായി ടൈപ്പ് ചെയ്തതോ ആകാം.",
-	"notFound.home": "ഇൻബോക്സിലേക്ക് പോകുക"
+	"notFound.home": "ഇൻബോക്സിലേക്ക് പോകുക",
+	"licenses.perAccount": "ഓരോ അക്കൗണ്ടിനും"
 }

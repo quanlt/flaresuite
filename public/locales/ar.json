@@ -3246,5 +3246,6 @@
 	"mailGuide.settings": "إعدادات الخادم",
 	"notFound.title": "هذه الصفحة غير موجودة",
 	"notFound.body": "ربما يكون الرابط قديمًا أو مكتوبًا بشكل خاطئ.",
-	"notFound.home": "الانتقال إلى البريد الوارد"
+	"notFound.home": "الانتقال إلى البريد الوارد",
+	"licenses.perAccount": "لكل حساب"
 }

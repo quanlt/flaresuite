@@ -2,9 +2,9 @@ export type LicensePlan = "community" | "pro" | "team";
 
 export type LicenseState = "inactive" | "active" | "invalid" | "expired" | "deactivated";
 
-export type PaymugLicenseAction = "activate" | "validate" | "deactivate";
+export type LicenseServerAction = "activate" | "validate" | "deactivate";
 
-export type PaymugLicenseResponse = {
+export type LicenseServerResponse = {
 	valid: boolean;
 	state: Exclude<LicenseState, "inactive">;
 	instanceId?: string;

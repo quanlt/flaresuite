@@ -3182,5 +3182,6 @@
 	"mailGuide.settings": "सर्वर सेटिंग्स",
 	"notFound.title": "यह पेज मौजूद नहीं है",
 	"notFound.body": "लिंक पुराना या गलत टाइप किया हुआ हो सकता है।",
-	"notFound.home": "इनबॉक्स पर जाएँ"
+	"notFound.home": "इनबॉक्स पर जाएँ",
+	"licenses.perAccount": "प्रति खाता"
 }

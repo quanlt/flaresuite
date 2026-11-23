@@ -3214,5 +3214,6 @@
 	"mailGuide.settings": "Параметры сервера",
 	"notFound.title": "Такой страницы нет",
 	"notFound.body": "Возможно, ссылка устарела или набрана с ошибкой.",
-	"notFound.home": "Перейти во «Входящие»"
+	"notFound.home": "Перейти во «Входящие»",
+	"licenses.perAccount": "за аккаунт"
 }
