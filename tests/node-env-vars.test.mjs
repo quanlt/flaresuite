@@ -23,6 +23,13 @@ const forwarded = {
 	APNS_TEAM_ID: "team",
 	APNS_PRIVATE_KEY: "pem",
 	APNS_RELAY_URL: "https://relay.example.com",
+	// FlareSuite Cloud sets these on every hosted workspace.
+	MANAGED_PLAN: "team",
+	MANAGED_SEAT_LIMIT: "15",
+	SETUP_TOKEN: "tok",
+	MANAGED_MAIL: "1",
+	CLOUD_DNS_URL: "https://flaresuite.ai/dashboard/w/ws_1/dns",
+	INBOUND_WEBHOOK_SECRET: "inbound-secret",
 };
 
 test("the Node runtime env carries the documented variables, including the signed-header hardening flag", (t) => {
