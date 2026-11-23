@@ -27,3 +27,8 @@ export async function signOutDevice(id: string): Promise<void> {
 export function groupPassword(password: string): string {
 	return password.replace(/(.{4})(?=.)/g, "$1 ");
 }
+
+/** The gateway's Apple configuration profile for an address (adds the account to Mail on iPhone, iPad or Mac). */
+export function appleProfileUrl(host: string, address: string): string {
+	return `https://${host}/apple/mail.mobileconfig?email=${encodeURIComponent(address)}`;
+}

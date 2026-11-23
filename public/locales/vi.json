@@ -3160,5 +3160,11 @@
 	"devices.done": "Xong",
 	"devices.createFailed": "Không tạo được mật khẩu ứng dụng",
 	"devices.mailAppsTitle": "Ứng dụng mail",
-	"devices.mailAppsBody": "Dùng Outlook, Apple Mail, Thunderbird hoặc ứng dụng mail trên điện thoại bằng mật khẩu ứng dụng."
+	"devices.mailAppsBody": "Dùng Outlook, Apple Mail, Thunderbird hoặc ứng dụng mail trên điện thoại bằng mật khẩu ứng dụng.",
+	"devices.autoSetup": "Outlook và Thunderbird thường tự tìm ra các thông số này từ địa chỉ của bạn. Trên iPhone, iPad hoặc Mac:",
+	"devices.appleProfile": "tải hồ sơ cài đặt",
+	"devices.appleProfileShort": "Cài trên iPhone hoặc Mac",
+	"domains.cloudMail.appsTitle": "App mail (tuỳ chọn)",
+	"domains.cloudMail.appsBody": "Có các bản ghi này, Outlook, Thunderbird và các app mail khác tự cấu hình chỉ từ địa chỉ và mật khẩu ứng dụng. Không có thì mail vẫn chạy. Giá trị SRV gồm ưu tiên, trọng số, cổng và máy chủ đích.",
+	"domains.cloudMail.appsMissing": "Chưa thêm"
 }

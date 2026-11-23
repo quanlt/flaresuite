@@ -14,6 +14,8 @@ export type CloudMailState = {
   setUp: boolean;
   status: string | null;
   records: CloudMailRecord[];
+  /** Optional records that let mail apps configure themselves (absent before the Cloud sent them). */
+  appRecords?: { type: string; name: string; value: string; found: boolean }[];
   checkedAt: number | null;
   error: string | null;
   autoConnect: boolean;
@@ -187,6 +189,43 @@ export default function CloudMailPanel() {
               </table>
             </div>
           </div>
+
+          {!!data.appRecords?.length && (
+            <div>
+              <h3 className="text-sm font-medium">{t("domains.cloudMail.appsTitle")}</h3>
+              <p className="mt-1 text-xs text-neutral-500">{t("domains.cloudMail.appsBody")}</p>
+              <div className="mt-3 overflow-x-auto">
+                <table className="w-full text-left text-sm" data-testid="cloud-mail-app-records">
+                  <thead className="text-xs text-neutral-500">
+                    <tr className="border-b border-neutral-200 dark:border-neutral-800">
+                      <th className="py-2 pr-3 font-medium">{t("domains.cloudMailType")}</th>
+                      <th className="py-2 pr-3 font-medium">{t("domains.cloudMailName")}</th>
+                      <th className="py-2 pr-3 font-medium">{t("domains.cloudMailValue")}</th>
+                      <th className="py-2 font-medium">{t("domains.cloudMailStatus")}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {data.appRecords.map((record) => (
+                      <tr key={`${record.type}-${record.name}`} className="border-b border-neutral-100 align-top dark:border-neutral-900">
+                        <td className="py-2.5 pr-3 font-mono text-xs">{record.type}</td>
+                        <td className="py-2.5 pr-3"><CopyValue value={record.name} /></td>
+                        <td className="py-2.5 pr-3"><CopyValue value={record.value} /></td>
+                        <td className={`py-2.5 text-xs ${record.found ? "text-emerald-600" : "text-neutral-500"}`}>
+                          {record.found ? t("domains.cloudMailFound") : t("domains.cloudMail.appsMissing")}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              {state === "verified" && data.autoConnect && data.providerName && !data.appRecords.every((record) => record.found) && (
+                <Button className="mt-3" variant="outline" onClick={() => connect.mutate()} disabled={connect.isPending}>
+                  {connect.isPending && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}
+                  {t("domains.cloudMailAuto", { provider: data.providerName })}
+                </Button>
+              )}
+            </div>
+          )}
 
           <div className="flex flex-wrap items-center gap-3">
             <Button variant={state === "verified" ? "outline" : "default"} onClick={() => check.mutate()} disabled={check.isPending}>

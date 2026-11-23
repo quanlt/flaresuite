@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { formatUserDate } from "@/lib/time/utils";
 import type { CreatedAppPassword, DeviceList, MailAppServer, MobileDevice } from "./device-settings-types";
-import { createAppPassword, groupPassword, loadDevices, signOutDevice } from "./device-settings-utils";
+import { appleProfileUrl, createAppPassword, groupPassword, loadDevices, signOutDevice } from "./device-settings-utils";
 
 function CopyRow({ label, value, display }: { label: string; value: string; display?: string }) {
 	const { t } = useLanguage();
@@ -38,6 +38,10 @@ export function MailServerSettings({ server, username, password }: { server: Mai
 			<p className="pb-1 pl-36 text-xs text-neutral-500">{t("devices.imapPort", { port: server.imapPort })}</p>
 			<CopyRow label={t("devices.smtpServer")} value={server.host} />
 			<p className="pl-36 text-xs text-neutral-500">{t("devices.smtpPort", { port: server.smtpPort, submission: server.submissionPort })}</p>
+			<p className="mt-3 border-t border-neutral-100 pt-3 text-xs text-neutral-500">
+				{t("devices.autoSetup")}{" "}
+				<a className="font-medium text-neutral-900 underline underline-offset-2" href={appleProfileUrl(server.host, username)} data-testid="apple-profile">{t("devices.appleProfile")}</a>
+			</p>
 		</div>
 	);
 }
@@ -140,7 +144,12 @@ export function DeviceSettings() {
 						<p className="text-sm text-neutral-500">{t("devices.mailAppsBody")}</p>
 					</div>
 				</div>
-				<Button variant="outline" size="sm" onClick={() => setCreating(true)} data-testid="new-app-password"><Plus className="mr-1 h-4 w-4" />{t("devices.newAppPassword")}</Button>
+				<div className="flex flex-wrap gap-2">
+					{list.mailServer && list.username ? (
+						<Button variant="ghost" size="sm" asChild><a href={appleProfileUrl(list.mailServer.host, list.username)} data-testid="apple-profile-card">{t("devices.appleProfileShort")}</a></Button>
+					) : null}
+					<Button variant="outline" size="sm" onClick={() => setCreating(true)} data-testid="new-app-password"><Plus className="mr-1 h-4 w-4" />{t("devices.newAppPassword")}</Button>
+				</div>
 			</div>
 			{devices.length === 0 ? <p className="text-sm text-neutral-500">{t("devices.empty")}</p> : (
 				<ul className="divide-y divide-neutral-100 rounded-2xl bg-neutral-50">

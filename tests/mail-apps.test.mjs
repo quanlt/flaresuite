@@ -6,6 +6,7 @@ import { loadApp } from "./helpers/real-db.mjs";
 const { app, newDatabase } = await loadApp("mail-apps", `
 	export { withEnvelopeBcc } from "./src/lib/jmap/identities.ts";
 	export { mailAppServer } from "./src/lib/auth/mail-apps.ts";
+	export { appleProfileUrl } from "./src/components/settings/device-settings-utils.ts";
 	export { GET as listDevices, POST as createDevice } from "./src/app/api/devices/route.ts";
 	export { authenticateApiKeyValue } from "./src/lib/api/key-auth.ts";
 `, { mocks: {
@@ -25,6 +26,7 @@ test("envelope recipients missing from the headers are sent as Bcc", () => {
 test("mail server settings come from MAIL_GATEWAY_HOST", () => {
 	assert.deepEqual(app.mailAppServer({ MAIL_GATEWAY_HOST: "Mail.FlareSuite.ai" }), { host: "mail.flaresuite.ai", imapPort: 993, smtpPort: 465, submissionPort: 587 });
 	assert.equal(app.mailAppServer({}), null);
+	assert.equal(app.appleProfileUrl("mail.flaresuite.ai", "ana+work@acme.test"), "https://mail.flaresuite.ai/apple/mail.mobileconfig?email=ana%2Bwork%40acme.test");
 	assert.equal(app.mailAppServer({ MAIL_GATEWAY_HOST: "bad host/" }), null);
 });
 
