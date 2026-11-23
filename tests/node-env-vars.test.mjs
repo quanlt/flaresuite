@@ -32,6 +32,7 @@ const forwarded = {
 	INBOUND_WEBHOOK_SECRET: "inbound-secret",
 	CLOUD_API_URL: "http://cloud:3000",
 	CLOUD_WORKSPACE_ID: "ws_1",
+	MAIL_GATEWAY_HOST: "mail.flaresuite.ai",
 };
 
 test("the Node runtime env carries the documented variables, including the signed-header hardening flag", (t) => {

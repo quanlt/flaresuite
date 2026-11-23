@@ -86,6 +86,8 @@ export function createNodeRuntime(): NodeRuntime {
 		CLOUD_DNS_URL: optional("CLOUD_DNS_URL"),
 		CLOUD_API_URL: optional("CLOUD_API_URL"),
 		CLOUD_WORKSPACE_ID: optional("CLOUD_WORKSPACE_ID"),
+		// Host of the IMAP/SMTP gateway for mail apps (Outlook, Apple Mail), shown with app passwords.
+		MAIL_GATEWAY_HOST: optional("MAIL_GATEWAY_HOST"),
 		// Marks the runtime for the few places that must behave differently.
 		MAILFLARE_RUNTIME: "node",
 		APP_URL: optional("APP_URL")?.replace(/\/$/, ""),

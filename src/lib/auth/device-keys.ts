@@ -1,7 +1,7 @@
 import { and, desc, eq } from "drizzle-orm";
 import { getDb } from "@/db";
 import { apiKeys, pushDevices } from "@/db/schema";
-import { generateApiKey, scopesToJson } from "@/lib/api-keys";
+import { generateApiKey, generateAppPassword, scopesToJson } from "@/lib/api-keys";
 import { newId } from "@/lib/ids";
 
 /**
@@ -10,8 +10,9 @@ import { newId } from "@/lib/ids";
  * (access follows `mailbox_access` live). They never carry admin scopes and
  * are revoked with the user's sessions.
  */
-export async function createDeviceKey(env: CloudflareEnv, userId: string, deviceName: string): Promise<{ id: string; key: string }> {
-	const { fullKey, prefix, hash, sha256 } = await generateApiKey();
+export async function createDeviceKey(env: CloudflareEnv, userId: string, deviceName: string, options: { appPassword?: boolean } = {}): Promise<{ id: string; key: string }> {
+	// Mail apps (IMAP/SMTP through the mail gateway) get a 16-character app password that people can type.
+	const { fullKey, prefix, hash, sha256 } = options.appPassword ? await generateAppPassword() : await generateApiKey();
 	const id = newId("key");
 	await getDb(env).insert(apiKeys).values({
 		id,

@@ -85,6 +85,8 @@ interface CloudflareEnv {
 	/** FlareSuite Cloud internal API (private network) and this workspace's id there: the Domains page reads its DNS records from it. */
 	CLOUD_API_URL?: string;
 	CLOUD_WORKSPACE_ID?: string;
+	/** IMAP/SMTP gateway host for mail apps, shown next to app passwords (Settings → Devices). */
+	MAIL_GATEWAY_HOST?: string;
 	/** When set, the first-run setup only accepts a browser that opened /api/setup/claim?token=<this>. */
 	SETUP_TOKEN?: string;
 	/** "node" when served by the self-hosted runtime in server/; unset on Workers. */

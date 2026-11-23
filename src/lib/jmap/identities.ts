@@ -3,6 +3,7 @@ import { agentDraftMetadata, messages } from "@/db/schema";
 import { sendEmail } from "@/lib/email/send";
 import { loadMessageAttachmentContents } from "@/lib/email/attachments";
 import { deleteMessageWithObjects } from "@/lib/email/message-cleanup";
+import { getEmailAddressList } from "@/lib/email/address";
 import { decodeIdentityId, identityId } from "./ids";
 import { listJmapMailboxes, listSendableAddresses } from "./access";
 import { getEmailState } from "./state";
@@ -83,6 +84,9 @@ export const emailSubmissionSet: JmapMethodHandler = async (ctx, args) => {
 			notCreated[creationId] = { type: "forbidden", description: "Review and confirm this AI draft in FlareSuite before sending" };
 			continue;
 		}
+		// SMTP clients (through the mail gateway) name Bcc recipients only in the envelope: recipients the envelope
+		// adds beyond To, Cc and Bcc are sent as Bcc. Envelope recipients never remove header recipients.
+		const bcc = withEnvelopeBcc(draft.toAddr, draft.ccAddr, draft.bccAddr, value.envelope);
 		try {
 			const attachments = await loadMessageAttachmentContents(ctx.env, draft.id);
 			const result = await sendEmail(ctx.env, {
@@ -90,7 +94,7 @@ export const emailSubmissionSet: JmapMethodHandler = async (ctx, args) => {
 				from: identity.address,
 				to: draft.toAddr,
 				cc: draft.ccAddr ?? undefined,
-				bcc: draft.bccAddr ?? undefined,
+				bcc: bcc ?? undefined,
 				subject: draft.subject ?? "(no subject)",
 				text: draft.textBody ?? undefined,
 				html: draft.htmlBody ?? undefined,
@@ -152,3 +156,19 @@ export const emailSubmissionQuery: JmapMethodHandler = async (ctx) => ({ account
 export const emailSubmissionChanges: JmapMethodHandler = async () => ({ type: "cannotCalculateChanges" });
 
 export { JmapError };
+
+/** Bcc list for a submission: the draft's Bcc plus envelope recipients that are not already addressed. */
+export function withEnvelopeBcc(to: string | null, cc: string | null, bcc: string | null, envelope: unknown): string | null {
+	const rcptTo = (envelope as { rcptTo?: unknown } | null | undefined)?.rcptTo;
+	if (!Array.isArray(rcptTo)) return bcc;
+	const addressed = new Set([...getEmailAddressList(to), ...getEmailAddressList(cc), ...getEmailAddressList(bcc)].map((address) => address.toLowerCase()));
+	const extra: string[] = [];
+	for (const entry of rcptTo) {
+		const email = typeof entry === "object" && entry && typeof (entry as { email?: unknown }).email === "string" ? (entry as { email: string }).email.trim() : "";
+		if (!/^[^\s@<>]+@[^\s@<>]+$/.test(email) || addressed.has(email.toLowerCase())) continue;
+		addressed.add(email.toLowerCase());
+		extra.push(email);
+	}
+	if (!extra.length) return bcc;
+	return [bcc, ...extra].filter(Boolean).join(", ");
+}
