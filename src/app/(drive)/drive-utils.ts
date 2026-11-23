@@ -1,5 +1,6 @@
 import { File as FileIcon, FileArchive, FileAudio, FileCode, FileImage, FileSpreadsheet, FileText, FileVideo, Folder, Presentation } from "@/components/icons";
 import type { DriveItemDto } from "@/lib/drive/types";
+import { officeKindFromContentType } from "@/lib/office/utils";
 
 const extensionOf = (name: string) => name.slice(name.lastIndexOf(".") + 1).toLowerCase();
 const SPREADSHEET = /spreadsheet|ms-excel|csv/;
@@ -11,6 +12,11 @@ const CODE_EXTENSIONS = new Set(["js", "ts", "tsx", "jsx", "json", "html", "css"
 export function driveIconFor(item: Pick<DriveItemDto, "kind" | "contentType" | "name">) {
 	if (item.kind === "folder") return { Icon: Folder, className: "text-amber-500" };
 	const type = item.contentType;
+	// FlareSuite's own Docs, Sheets and Slides files, in their app colours (inline so the dark theme keeps them).
+	const office = officeKindFromContentType(type);
+	if (office === "document") return { Icon: FileText, className: "", style: { color: "#1a73e8" } };
+	if (office === "spreadsheet") return { Icon: FileSpreadsheet, className: "", style: { color: "#188038" } };
+	if (office === "presentation") return { Icon: Presentation, className: "", style: { color: "#e37400" } };
 	const extension = extensionOf(item.name);
 	if (type.startsWith("image/")) return { Icon: FileImage, className: "text-rose-500" };
 	if (type.startsWith("video/")) return { Icon: FileVideo, className: "text-purple-500" };

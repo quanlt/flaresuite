@@ -1,6 +1,6 @@
 # Databases
 
-Mailflare stores its data in **Cloudflare D1** by default. Nothing needs configuring for that: deploy with the `DB` binding from `wrangler.jsonc` and you are done.
+FlareSuite stores its data in **Cloudflare D1** by default. Nothing needs configuring for that: deploy with the `DB` binding from `wrangler.jsonc` and you are done.
 
 Set `DATABASE_URL` to use another database instead. Every database [Drizzle ORM](https://orm.drizzle.team) supports is covered by three dialects:
 
@@ -28,8 +28,8 @@ On Cloudflare Workers set them as Worker variables or secrets (`npx wrangler sec
 | --- | --- | --- |
 | Cloudflare D1 | unset | Default. Apply migrations with `npm run db:migrate:remote` or from Admin → Settings. |
 | Turso / libSQL | `libsql://my-db.turso.io` + `DATABASE_AUTH_TOKEN` | Runs on Workers and Node. |
-| Local SQLite file | `file:./data/mailflare.db` | Node only (better-sqlite3). The self-hosted default is already a SQLite file in `DATA_DIR`. |
-| Bun SQLite | `file:./mailflare.db` + `DATABASE_DRIVER=bun-sqlite` | Bun only. |
+| Local SQLite file | `file:./data/flaresuite.db` | Node only (better-sqlite3). The self-hosted default is already a SQLite file in `DATA_DIR`. |
+| Bun SQLite | `file:./flaresuite.db` + `DATABASE_DRIVER=bun-sqlite` | Bun only. |
 | PostgreSQL | `postgres://user:pass@host:5432/db` | node-postgres. Add `?sslmode=require` where TLS is required. |
 | Supabase | the pooler or direct URL from the dashboard | node-postgres. Use the transaction pooler on Workers. |
 | Neon / Vercel Postgres | `postgres://…neon.tech/db?sslmode=require` | Detected from the hostname; uses Neon's HTTP driver (works on Workers). `DATABASE_DRIVER=node-postgres` selects TCP instead. |
@@ -39,7 +39,7 @@ On Cloudflare Workers set them as Worker variables or secrets (`npx wrangler sec
 | PlanetScale | `mysql://user:pass@aws.connect.psdb.cloud/db` | Detected from the hostname; HTTP driver, works on Workers. |
 | Hyperdrive (Workers) | `DATABASE_DRIVER=node-postgres` (or `mysql2`) and a `HYPERDRIVE` binding | The binding's connection string is used when `DATABASE_URL` is unset. |
 
-Create an empty database (and user) first. Mailflare creates its tables.
+Create an empty database (and user) first. FlareSuite creates its tables.
 
 ### Workers and the schema dialect
 
@@ -103,30 +103,30 @@ Other things to know:
 npm run db:smoke -- pglite://memory
 
 # Against real servers
-docker run -d -p 5432:5432 -e POSTGRES_PASSWORD=pw -e POSTGRES_DB=mailflare postgres:17
-docker run -d -p 3306:3306 -e MYSQL_ROOT_PASSWORD=pw -e MYSQL_DATABASE=mailflare mysql:8.4
+docker run -d -p 5432:5432 -e POSTGRES_PASSWORD=pw -e POSTGRES_DB=flaresuite postgres:17
+docker run -d -p 3306:3306 -e MYSQL_ROOT_PASSWORD=pw -e MYSQL_DATABASE=flaresuite mysql:8.4
 MAILFLARE_DB_DIALECT=postgres npm run db:smoke -- postgres://postgres:pw@127.0.0.1:5432/mailflare
 MAILFLARE_DB_DIALECT=mysql npm run db:smoke -- mysql://root:pw@127.0.0.1:3306/mailflare
 ```
 
 `db:smoke` applies the migrations and exercises the query shapes the app relies on (inserts, upserts, `returning`, triggers, batches, search, backups, bookings). Set `MAILFLARE_DB_DIALECT` to match the URL when running it (the app derives it from `DATABASE_URL` by itself).
 
-Self-hosted with Docker Compose and PostgreSQL (add next to the `mailflare` service, then set `DATABASE_URL=postgres://mailflare:change-me@db:5432/mailflare` in `.env.docker`):
+Self-hosted with Docker Compose and PostgreSQL (add next to the `flaresuite` service, then set `DATABASE_URL=postgres://flaresuite:change-me@db:5432/flaresuite` in `.env.docker`):
 
 ```yaml
   db:
     image: postgres:17
     restart: unless-stopped
     environment:
-      POSTGRES_USER: mailflare
+      POSTGRES_USER: flaresuite
       POSTGRES_PASSWORD: change-me
-      POSTGRES_DB: mailflare
+      POSTGRES_DB: flaresuite
     volumes:
-      - mailflare-db:/var/lib/postgresql/data
+      - flaresuite-db:/var/lib/postgresql/data
 ```
 
 Run the app itself against another database:
 
 ```bash
-DATABASE_URL=postgres://postgres:pw@127.0.0.1:5432/mailflare npm run dev:node
+DATABASE_URL=postgres://postgres:pw@127.0.0.1:5432/flaresuite npm run dev:node
 ```

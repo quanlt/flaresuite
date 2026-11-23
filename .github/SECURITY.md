@@ -5,11 +5,11 @@
 Please don't report security vulnerabilities in public issues or pull requests. Report
 them privately on GitHub instead: open the **Security** tab and choose
 **Report a vulnerability**, or go to
-<https://github.com/hieunc229/mailflare/security/advisories/new>.
+<https://github.com/quanlt/flaresuite/security/advisories/new>.
 
 Include as much of this as you can:
 
-* the Mailflare version (from `package.json`) or the commit you tested
+* the FlareSuite version (from `package.json`) or the commit you tested
 * how it is deployed: Cloudflare Workers, Node.js or Docker
 * steps to reproduce, or a proof of concept
 * what an attacker can do with it, and what they need first (a mailbox account, an API
@@ -20,10 +20,10 @@ be published with credit to you, unless you'd rather stay anonymous.
 
 ## Supported versions
 
-Mailflare is self-hosted and released from `main`. Security fixes only go into the latest
-version, so keep your installation up to date with **Update Mailflare** in the admin
+FlareSuite is self-hosted and released from `main`. Security fixes only go into the latest
+version, so keep your installation up to date with **Update FlareSuite** in the admin
 dashboard or by redeploying. See
-[Updating Mailflare](https://github.com/hieunc229/mailflare/blob/main/docs/deployment.md#updating-mailflare).
+[Updating FlareSuite](https://github.com/quanlt/flaresuite/blob/main/docs/deployment.md#updating-flaresuite).
 
 ## Scope
 
@@ -36,5 +36,5 @@ Out of scope:
   the provider
 * spam or phishing that reaches an inbox without exploiting a bug; open a normal issue
 * behaviour documented as a design choice in
-  [Security notes for inbound mail](https://github.com/hieunc229/mailflare/blob/main/docs/security.md),
+  [Security notes for inbound mail](https://github.com/quanlt/flaresuite/blob/main/docs/security.md),
   such as attachments not being scanned by an antivirus engine

@@ -1,28 +1,12 @@
-<img src="public/icon-192.png" alt="Mailflare" width="96" />
+<img src="public/icon-192.png" alt="FlareSuite" width="96" />
 
+# FlareSuite
 
-# Mailflare
+A self-hosted workspace suite: **custom domain Email**, **Calendar**, **Drive**, **Docs**, **Sheets**, **Slides**, **Contacts**, **Booking** and **built-in AI agents**.
 
-A self-hosted alternative to Google Workspace. Setup **custom domain Emails**, **Calendar, Drive, Booking** and **built-in AI agents**.
+Self-host it on Cloudflare Workers or Docker.
 
-Self-host it on Cloudflare or Docker. **Or try [Mailflare Cloud](https://cloud.mailflare.co?ref=github) with high-deliverable emails** from $4​
-
-[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/hieunc229/mailflare)
-
-## Screenshots
-
-<table>
-  <tr>
-    <td align="center"><img src="screenshots/1.png" alt="Inbox" width="320"><br>Inbox</td>
-    <td align="center"><img src="screenshots/2.png" alt="Manage domains" width="320"><br>Domains</td>
-    <td align="center"><img src="screenshots/3.png" alt="Manage inboxes" width="320"><br>Mailboxes</td>
-  </tr>
-  <tr>
-    <td align="center"><img src="screenshots/4.png" alt="Calendar" width="320"><br>Calendar</td>
-    <td align="center"><img src="screenshots/5.png" alt="Booking" width="320"><br>Booking</td>
-    <td align="center"><img src="screenshots/6.png" alt="Drive" width="320"><br>Drive</td>
-  </tr>
-</table>
+> FlareSuite is a fork of [Mailflare](https://github.com/hieunc229/mailflare) by Hieu Nguyen, licensed under the GNU AGPL-3.0. See [NOTICE](NOTICE) and [LICENSE](LICENSE).
 
 ## Features
 
@@ -33,61 +17,38 @@ Self-host it on Cloudflare or Docker. **Or try [Mailflare Cloud](https://cloud.m
 - **Calendar**: Repeating events with time zones. Attendees get email invitations.
 - **Booking**: Share a public link so anyone can book a free time on your calendar.
 - **Drive**: Store and share files.
+- **Docs, Sheets and Slides**: Write documents, build spreadsheets with formulas and make presentations in the browser. Files live in Drive and share like any Drive file: view or edit access per person (inherited from shared folders), email notifications, and read-only public links. Import and export HTML, Markdown, Word, CSV and Excel formats.
+- **Contacts**: Address book fed by the mail you send and receive.
 - **AI agents**: Search mail, draft replies and manage events. Connect other AI tools over MCP.
+
+### Roadmap
+
+- Real-time co-editing and comments in Docs, Sheets and Slides (today two people editing at once get a conflict prompt instead of a silent overwrite).
+- Docs, Sheets and Slides tools for the AI agent and MCP.
 
 ### Technical
 
-- **Databases**: Cloudflare D1 (default), PostgreSQL, MySQL, Turso / libSQL, or a local SQLite file. Set `DATABASE_URL` to switch. Works with Supabase, Neon, PlanetScale, TiDB and more. See [Databases](docs/databases.md).
+- **Databases**: Cloudflare D1 (default), PostgreSQL, MySQL, Turso / libSQL, or a local SQLite file. Set `DATABASE_URL` to switch. See [Databases](docs/databases.md).
 - **File storage**: Cloudflare R2, Backblaze B2 or AWS S3.
 - **Hosting**: Cloudflare Workers or a single Docker container.
 - **Admin**: Users, API keys, webhooks, audit logs and backups.
 - **Import**: Bring in mail from IMAP, Gmail Takeout, `.eml` and `.mbox` files.
+- **34 languages**, including Tiếng Việt, plus right-to-left Arabic, Urdu and Persian.
 
-Mailflare currently supports 34 languages, including English, Português (Brasil), Português (Portugal), Español, Français, Deutsch, Italiano, Nederlands, Polski, Українська, Русский, Türkçe, 中文（简体）, 日本語, 한국어, Bahasa Indonesia, Bahasa Melayu, Tiếng Việt, ไทย, हिन्दी, বাংলা, मराठी, తెలుగు, தமிழ், ગુજરાતી, ಕನ್ನಡ, മലയാളം, ਪੰਜਾਬੀ, සිංහල, Kiswahili, Hausa, plus العربية, اردو and فارسی (right-to-left).
+## Deploy to Cloudflare
 
-## Cost
+1. Push this repository to your own GitHub account, then connect it to Cloudflare Workers (Workers & Pages → Create → Import a repository), or deploy from your machine with `npm run deploy`.
+2. Keep the Worker name `flaresuite`. If you rename it, also change `services[].service` in `wrangler.jsonc` and set `CF_EMAIL_WORKER_NAME`.
+3. Create the resources named in `wrangler.jsonc`: D1 database `flaresuite`, R2 bucket `flaresuite-raw`, and queues `flaresuite-inbound`, `flaresuite-outbound` and `flaresuite-agent`.
+4. Set the `CF_TOKEN` Worker secret (permissions below).
+5. Open the app at `/setup`, create the admin account, then add a domain from the same Cloudflare account and create your first mailbox.
 
-You can receive and send mail for free.
-
-- **Receiving**: Cloudflare Email Routing is free.
-- **Sending**: Use the free tier of Resend (3,000 emails a month) or Amazon SES. Cloudflare's own sending needs the $5/month Paid Worker plan.
-
-New Amazon SES accounts start in a sandbox. Ask AWS for production access to lift it. Prices change, so check [Resend](https://resend.com/pricing), [Amazon SES](https://aws.amazon.com/ses/pricing/) and [Cloudflare](https://developers.cloudflare.com/workers/platform/pricing/).
-
-## Deploy
-
-1. **Deploy the app.** Click **Deploy to Cloudflare**. Keep the app name `mailflare`, or it will break.
-2. **Finish setup.** Open the app at `/setup` and create your admin account.
-3. **Connect a domain.** Add a domain from the same Cloudflare account, then create your first mailbox.
-
-> **`CF_TOKEN` is required.** Create a scoped [Cloudflare API token](https://github.com/hieunc229/mailflare/issues/24#issuecomment-5523686105) with these permissions:
+> **`CF_TOKEN` permissions**
 >
 > - All accounts: Email Sending:Edit, DNS Settings:Edit, Email Routing Addresses:Edit
 > - All zones: DNS Settings:Edit, Email Routing Rules:Edit, Zone Settings:Edit, DNS:Edit
 
 More options: [deployment guide](docs/deployment.md).
-
-### Deploy with an AI agent
-
-Paste this into an AI agent that has terminal access (Claude Code, Codex, Cursor and similar):
-
-```text
-Install Mailflare for me from https://github.com/hieunc229/mailflare on my Cloudflare account.
-
-1. Read README.md, docs/deployment.md and wrangler.jsonc first.
-2. Ask me for my Cloudflare account ID and two API tokens, using a secret input:
-   a deploy token (for Wrangler) and a runtime token (the Worker secret CF_TOKEN).
-   Never print them, commit them, or pass them as command arguments.
-3. Keep the Worker name exactly "mailflare". Create or reuse the D1 database
-   "mailflare", the R2 bucket "mailflare-raw", and the queues "mailflare-inbound",
-   "mailflare-outbound" and "mailflare-agent".
-4. Install dependencies, run `npm run deploy`, and set CF_TOKEN as a Worker secret.
-   Do not run remote database migrations yourself. The /setup page does that.
-5. Give me the app URL and anything I still need to do. I will open /setup, create
-   the admin account and connect my domain.
-```
-
-Token permissions and more options: [deployment guide](docs/deployment.md#deploy-with-an-ai-coding-agent).
 
 ### Self-host with Docker
 
@@ -98,9 +59,17 @@ cp .env.docker.example .env.docker
 docker compose up -d --build
 ```
 
-Or skip the build and run the prebuilt image: `docker compose -f docker-compose.image.yml up -d`.
-
 See [self-hosting](docs/self-hosting.md).
+
+## FlareSuite-specific configuration
+
+| Name | Where | Purpose |
+| --- | --- | --- |
+| `NEXT_PUBLIC_SOURCE_CODE_URL` | Build-time variable | Public URL of the source code this server runs. Shown in the sidebar as the AGPL source offer. **Set it to your own repository.** |
+| `UPDATE_SOURCE_REPOSITORY` | Worker variable and GitHub Actions variable | Your canonical FlareSuite repository (`owner/name`) for the admin self-update. Never point it at upstream Mailflare: the update replaces the whole tree. |
+| `PUBLISH_DOCKER_IMAGE` | GitHub Actions variable | Set to `true` to publish a Docker image to GHCR on pushes to `main`. |
+
+Internal identifiers inherited from Mailflare (`MAILFLARE_*` environment variables, `X-Mailflare-*` headers, `mailflare_*` database triggers) are kept on purpose, so existing data stays compatible and upstream fixes can still be merged.
 
 ## Local development
 
@@ -115,9 +84,20 @@ Add your Cloudflare credentials to `.dev.vars`, then open [localhost:3000](http:
 
 - `npm run build`: build the Worker
 - `npm run deploy`: build and deploy
-- `npm run lint`: lint and type check
+- `npm run lint`: lint
+- `node --test tests/*.test.mjs`: unit tests
+- `npx tsc --noEmit`: type check (the build does not)
 
 A schema change needs a migration for each database type. See [Databases](docs/databases.md#migrations).
+
+### Pulling fixes from upstream Mailflare
+
+```bash
+git fetch upstream
+git merge upstream/main
+```
+
+Expect conflicts in user-facing strings (`FlareSuite` vs `Mailflare`) and resource names; keep the FlareSuite side.
 
 ## Documentation
 
@@ -126,9 +106,10 @@ A schema change needs a migration for each database type. See [Databases](docs/d
 - [Sending and receiving providers](docs/providers.md)
 - [API and integrations](docs/api.md)
 - [Email assistant and MCP](docs/email-assistant-and-mcp.md)
+- [Docs, Sheets, Slides and adding an app](docs/extending-apps.md)
 - [Adding a language](docs/localization.md)
 - [Troubleshooting](docs/troubleshooting.md)
 
 ## License
 
-See [LICENSE](LICENSE).
+GNU Affero General Public License v3.0. See [LICENSE](LICENSE) and [NOTICE](NOTICE). If you run a modified FlareSuite as a network service, you must offer its users the corresponding source code (AGPL section 13).

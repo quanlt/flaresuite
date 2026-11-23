@@ -19,7 +19,16 @@ import packageMetadata from "../../../../../package.json";
 const GITHUB_API_URL = "https://api.github.com";
 const GITHUB_API_VERSION = "2026-03-10";
 const UPDATE_WORKFLOW = "deploy-update.yml";
-const UPDATE_SOURCE_REPOSITORY = "hieunc229/mailflare";
+/**
+ * The repository releases are read from. A FlareSuite fork must point this at its
+ * own canonical repository (owner/name), never at upstream Mailflare, because the
+ * update workflow replaces the installation branch with this source.
+ */
+function getUpdateSourceRepository(env: CloudflareEnv = getEnv()): string {
+  const repository = env.UPDATE_SOURCE_REPOSITORY?.trim();
+  if (!repository) throw new Error("UPDATE_SOURCE_REPOSITORY must be configured as owner/repository");
+  return repository;
+}
 
 export async function authorizeAdminRequest(request: Request) {
   const env = getEnv();
@@ -72,6 +81,10 @@ function getUpdateConfiguration(env: CloudflareEnv): UpdateConfigurationItem[] {
       name: "GITHUB_UPDATE_REPO",
       configured: !!env.GITHUB_UPDATE_REPO?.trim(),
     },
+    {
+      name: "UPDATE_SOURCE_REPOSITORY",
+      configured: !!env.UPDATE_SOURCE_REPOSITORY?.trim(),
+    },
   ];
 }
 
@@ -87,7 +100,7 @@ async function githubRequest<T>(
     headers: {
       Accept: "application/vnd.github+json",
       Authorization: `Bearer ${env.GITHUB_UPDATE_TOKEN || ""}`,
-      "User-Agent": "mailflare",
+      "User-Agent": "flaresuite",
       "Content-Type": "application/json",
       "X-GitHub-Api-Version": GITHUB_API_VERSION,
       ...init?.headers,
@@ -155,12 +168,12 @@ function isNewerVersion(
 
 async function getTargetVersion(): Promise<string> {
   // const sourceConfig: UpdateDispatchConfig = {
-  //   repository: UPDATE_SOURCE_REPOSITORY,
+  //   repository: getUpdateSourceRepository(env),
   //   token,
   // };
   // const ref = await getDispatchRef(sourceConfig);
   const { data, response } = await githubRequest<GitHubContentResponse>(
-    `/repos/${UPDATE_SOURCE_REPOSITORY}/contents/package.json`,
+    `/repos/${getUpdateSourceRepository()}/contents/package.json`,
   );
 
   if (!response.ok || !data?.content || data.encoding !== "base64") {
@@ -184,11 +197,11 @@ async function getCommitStatus(env: CloudflareEnv) {
   const ref = await getDispatchRef(config);
   const owner = config.repository.split("/")[0];
   const { data: upstream } = await githubRequest<GitHubRepositoryResponse>(
-    `/repos/${UPDATE_SOURCE_REPOSITORY}`,
+    `/repos/${getUpdateSourceRepository()}`,
   );
   const branch = upstream?.default_branch ?? "main";
   const { data, response } = await githubRequest<GitHubCompareResponse>(
-    `/repos/${UPDATE_SOURCE_REPOSITORY}/compare/${branch}...${owner}:${ref}`,
+    `/repos/${getUpdateSourceRepository()}/compare/${branch}...${owner}:${ref}`,
   );
   if (!response.ok || typeof data?.behind_by !== "number") {
     throw new Error(
@@ -230,7 +243,7 @@ export async function getUpdateStatus(
       configuration,
       configured,
       currentVersion,
-      repository: UPDATE_SOURCE_REPOSITORY,
+      repository: getUpdateSourceRepository(env),
       targetVersion: sha.slice(0, 7),
       targetCommit: sha,
     };
@@ -244,7 +257,7 @@ export async function getUpdateStatus(
     configuration,
     configured,
     currentVersion,
-    repository: UPDATE_SOURCE_REPOSITORY,
+    repository: getUpdateSourceRepository(env),
     targetVersion,
   };
 }

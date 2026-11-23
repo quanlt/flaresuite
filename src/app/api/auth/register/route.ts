@@ -19,12 +19,16 @@ import { RequestBodyTooLargeError } from "@/lib/http/errors";
 import { verifyTurnstileToken } from "@/lib/auth/turnstile";
 import { getDomainProvisioningError } from "@/lib/domains/errors";
 import { ensureBookingUsername } from "@/lib/booking/username";
+import { matchesSetupToken, setupTokenFromRequest } from "@/lib/auth/setup-token";
 
 export async function POST(request: Request) {
 	const env = getEnv();
 	const db = getDb(env);
 	if (await hasAdminAccount(env)) {
 		return NextResponse.json({ error: "Registration is closed after the first account is created" }, { status: 403 });
+	}
+	if (!matchesSetupToken(env, setupTokenFromRequest(request))) {
+		return NextResponse.json({ error: "Open the setup link from your FlareSuite Cloud dashboard to create the first account." }, { status: 403 });
 	}
 
 	let body: unknown;

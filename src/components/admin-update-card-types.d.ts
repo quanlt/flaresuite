@@ -1,6 +1,6 @@
 export interface UpdateConfigurationItem {
 	configured: boolean;
-	name: "GITHUB_UPDATE_REPO" | "GITHUB_UPDATE_TOKEN";
+	name: "GITHUB_UPDATE_REPO" | "GITHUB_UPDATE_TOKEN" | "UPDATE_SOURCE_REPOSITORY";
 }
 
 export interface UpdateStatusResponse {

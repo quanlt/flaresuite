@@ -14,7 +14,7 @@ export type SplitAnnouncementSide = {
 	repeatAnchorDay: number | null;
 	/**
 	 * Exclusive end of the series. It is written as the RRULE UNTIL verbatim, the same convention the
-	 * series writer uses everywhere; Mailflare's own parser re-adds its one-second inclusive pad on read.
+	 * series writer uses everywhere; FlareSuite's own parser re-adds its one-second inclusive pad on read.
 	 */
 	repeatUntil: Date | null;
 	repeatInterval: number;

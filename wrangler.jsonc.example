@@ -1,6 +1,6 @@
 {
 	"$schema": "node_modules/wrangler/config-schema.json",
-	"name": "mailflare",
+	"name": "flaresuite",
 	"main": "./worker.ts",
 	"compatibility_date": "2026-05-20",
 	"compatibility_flags": [
@@ -17,7 +17,7 @@
 	"services": [
 		{
 			"binding": "WORKER_SELF_REFERENCE",
-			"service": "mailflare",
+			"service": "flaresuite",
 		},
 	],
 	"triggers": {
@@ -52,34 +52,34 @@
 	"d1_databases": [
 		{
 			"binding": "DB",
-			"database_name": "mailflare",
+			"database_name": "flaresuite",
 			"migrations_dir": "drizzle/migrations",
 		},
 	],
 	"r2_buckets": [
 		{
 			"binding": "BUCKET",
-			"bucket_name": "mailflare-raw",
+			"bucket_name": "flaresuite-raw",
 		},
 	],
 	"queues": {
 		"producers": [
 			{
 				"binding": "INBOUND_QUEUE",
-				"queue": "mailflare-inbound",
+				"queue": "flaresuite-inbound",
 			},
 			{
 				"binding": "OUTBOUND_QUEUE",
-				"queue": "mailflare-outbound",
+				"queue": "flaresuite-outbound",
 			},
 			{
 				"binding": "AGENT_QUEUE",
-				"queue": "mailflare-agent",
+				"queue": "flaresuite-agent",
 			},
 		],
 		"consumers": [
 			{
-				"queue": "mailflare-inbound",
+				"queue": "flaresuite-inbound",
 				"max_batch_size": 5,
 				// New mail should reach the inbox at once; do not wait up to 5 s for a batch to fill.
 				"max_batch_timeout": 1,
@@ -87,12 +87,12 @@
 				"max_retries": 12,
 			},
 			{
-				"queue": "mailflare-outbound",
+				"queue": "flaresuite-outbound",
 				"max_batch_size": 5,
 				"max_retries": 3,
 			},
 			{
-				"queue": "mailflare-agent",
+				"queue": "flaresuite-agent",
 				"max_batch_size": 1,
 				"max_retries": 3,
 			},

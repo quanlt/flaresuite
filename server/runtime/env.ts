@@ -37,9 +37,9 @@ export function createNodeRuntime(): NodeRuntime {
 	const database = getDatabaseConfig({}).driver === "d1" ? openSqliteDatabase(join(dataDir, "mailflare.sqlite")) : undefined;
 	const bucket = openFileBucket(join(dataDir, "blobs"));
 	const mailer = openMailer(mailerConfig());
-	const inboundQueue = openQueue("mailflare-inbound");
-	const outboundQueue = openQueue("mailflare-outbound");
-	const agentQueue = openQueue("mailflare-agent");
+	const inboundQueue = openQueue("flaresuite-inbound");
+	const outboundQueue = openQueue("flaresuite-outbound");
+	const agentQueue = openQueue("flaresuite-agent");
 	const realtime = new RealtimeHubRegistry();
 	const publicDir = resolve(optional("PUBLIC_DIR") ?? "./public");
 
@@ -76,6 +76,11 @@ export function createNodeRuntime(): NodeRuntime {
 		GITHUB_UPDATE_TOKEN: optional("GITHUB_UPDATE_TOKEN"),
 		GITHUB_UPDATE_REF: optional("GITHUB_UPDATE_REF"),
 		GITHUB_UPDATE_REPO: optional("GITHUB_UPDATE_REPO"),
+		UPDATE_SOURCE_REPOSITORY: optional("UPDATE_SOURCE_REPOSITORY"),
+		// FlareSuite Cloud: plan granted by the host, and the token that guards first-run setup.
+		MANAGED_PLAN: optional("MANAGED_PLAN"),
+		MANAGED_SEAT_LIMIT: optional("MANAGED_SEAT_LIMIT"),
+		SETUP_TOKEN: optional("SETUP_TOKEN"),
 		// Marks the runtime for the few places that must behave differently.
 		MAILFLARE_RUNTIME: "node",
 		APP_URL: optional("APP_URL")?.replace(/\/$/, ""),

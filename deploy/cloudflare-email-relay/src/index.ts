@@ -1,5 +1,5 @@
 /**
- * Mailflare email relay. Keeps MX on Cloudflare Email Routing while the app
+ * FlareSuite email relay. Keeps MX on Cloudflare Email Routing while the app
  * runs elsewhere: every message routed to this Worker is posted to the
  * self-hosted server, which answers with the routing decision so reject and
  * forward still happen here, on the live message.
@@ -49,10 +49,10 @@ export default {
 				message.setReject("Message rejected: receiving server says the email is too large. Send a download link instead.");
 				return;
 			}
-			if (!response.ok) throw new Error(`Mailflare answered ${response.status}`);
+			if (!response.ok) throw new Error(`FlareSuite answered ${response.status}`);
 			decision = (await response.json()) as Decision;
 		} catch (error) {
-			console.error("Relay to Mailflare failed", error);
+			console.error("Relay to FlareSuite failed", error);
 			// setReject bounces permanently; throwing is a temporary SMTP failure, so the sender retries.
 			throw error;
 		}

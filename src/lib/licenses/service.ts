@@ -5,7 +5,7 @@ import { licenseSettings } from "@/db/schema";
 import { LICENSE_PRODUCT_IDS } from "./constants";
 import { callPaymugLicenseApi } from "./paymug";
 import type { LicenseEntitlements, LicensePlan, LicenseStatus, PaymugLicenseAction } from "./types";
-import { hashLicenseKey, normalizeLicensePlan, parseFeatures } from "./utils";
+import { hashLicenseKey, normalizeLicensePlan, parseFeatures, readManagedPlan } from "./utils";
 
 const LICENSE_SETTINGS_ID = "default";
 
@@ -49,7 +49,12 @@ function toLicenseStatus(settings: typeof licenseSettings.$inferSelect): License
 }
 
 export async function getLicenseStatus(env: CloudflareEnv): Promise<LicenseStatus> {
-	return toLicenseStatus(await getOrCreateLicenseSettings(env));
+	const settings = await getOrCreateLicenseSettings(env);
+	const managed = readManagedPlan(env);
+	if (managed) {
+		return { ...toLicenseStatus(settings), plan: managed.plan, state: "active", active: true, seatLimit: managed.seatLimit, features: ["managed"] };
+	}
+	return toLicenseStatus(settings);
 }
 
 export async function getLicenseEntitlements(env: CloudflareEnv): Promise<LicenseEntitlements> {

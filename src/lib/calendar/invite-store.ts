@@ -136,7 +136,7 @@ export async function registerInboundInvite(env: CloudflareEnv, input: { userId:
 			await applyInviteReply(env, input.userId, input.senderAddress, invite);
 			return;
 		}
-		// Mailflare writes UID <event id>@mailflare; an invitation you sent yourself is already your own event.
+		// FlareSuite writes UID <event id>@mailflare; an invitation you sent yourself is already your own event.
 		const ownId = invite.uid.endsWith("@mailflare") ? invite.uid.slice(0, -"@mailflare".length) : null;
 		if (ownId) {
 			const [own] = await db.select({ id: calendarEvents.id }).from(calendarEvents).where(and(eq(calendarEvents.id, ownId), eq(calendarEvents.userId, input.userId))).limit(1);

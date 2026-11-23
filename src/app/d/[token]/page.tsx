@@ -7,6 +7,8 @@ import { formatDriveSize } from "@/lib/drive/utils";
 import { DrivePreviewBody } from "@/app/(drive)/drive-preview";
 import { driveIconFor, publicContentUrl, sortDriveItems } from "@/app/(drive)/drive-utils";
 import type { PublicDriveItem, PublicDriveListing } from "./types";
+import { OfficePublicViewer } from "@/components/office/office-public-viewer";
+import { officeKindFromContentType } from "@/lib/office/utils";
 
 export default function PublicDrivePage({ params }: { params: Promise<{ token: string }> }) {
 	const { token } = use(params);
@@ -32,6 +34,9 @@ export default function PublicDrivePage({ params }: { params: Promise<{ token: s
 	if (!data) return <main className="safe-area min-h-dvh bg-[#f6f8fc]" aria-busy="true" />;
 	const { item, items, path } = data;
 	const isFile = item.kind === "file";
+	// Docs, Sheets and Slides open read-only in their own viewer instead of a file preview.
+	const office = isFile ? officeKindFromContentType(item.contentType) : null;
+	if (office) return <OfficePublicViewer kind={office} name={item.name} contentUrl={publicContentUrl(token, item.id)} />;
 
 	return (
 		<main className="mx-auto flex min-h-dvh max-w-5xl flex-col bg-[#f6f8fc] p-4 md:p-8 pt-[max(1rem,env(safe-area-inset-top))] pr-[max(1rem,env(safe-area-inset-right))] pb-[max(1rem,env(safe-area-inset-bottom))] pl-[max(1rem,env(safe-area-inset-left))] md:pt-[max(2rem,env(safe-area-inset-top))] md:pr-[max(2rem,env(safe-area-inset-right))] md:pb-[max(2rem,env(safe-area-inset-bottom))] md:pl-[max(2rem,env(safe-area-inset-left))]">
@@ -56,15 +61,15 @@ export default function PublicDrivePage({ params }: { params: Promise<{ token: s
 }
 
 function PublicRow({ entry, token, onOpen }: { entry: PublicDriveItem; token: string; onOpen: (id: string) => void }) {
-	const { Icon, className } = driveIconFor(entry);
+	const { Icon, className, style } = driveIconFor(entry);
 	return (
 		<div className="flex items-center gap-4 rounded-lg px-3 text-sm hover:bg-neutral-50">
 			<button type="button" onClick={() => onOpen(entry.id)} className="flex min-w-0 flex-1 items-center gap-4 py-3 text-left">
-				<Icon size={16} className={className} fill={entry.kind === "folder" ? "currentColor" : "none"} />
+				<Icon size={16} className={className} style={style} fill={entry.kind === "folder" ? "currentColor" : "none"} />
 				<span className="truncate text-neutral-900">{entry.name}</span>
 			</button>
 			{entry.kind === "file" && <span className="hidden shrink-0 text-neutral-500 sm:block">{formatDriveSize(entry.size)}</span>}
-			{entry.kind === "file" && <a href={publicContentUrl(token, entry.id, true)} aria-label={entry.name} className="shrink-0 rounded-full p-2 text-neutral-600 hover:bg-neutral-200"><Download size={16} /></a>}
+			{entry.kind === "file" && !officeKindFromContentType(entry.contentType) && <a href={publicContentUrl(token, entry.id, true)} aria-label={entry.name} className="shrink-0 rounded-full p-2 text-neutral-600 hover:bg-neutral-200"><Download size={16} /></a>}
 		</div>
 	);
 }

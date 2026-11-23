@@ -10,7 +10,7 @@ jobs:
   update:
     runs-on: ubuntu-latest
     env:
-      UPDATE_SOURCE_REPOSITORY: ${{ vars.UPDATE_SOURCE_REPOSITORY || 'hieunc229/mailflare' }}
+      UPDATE_SOURCE_REPOSITORY: ${{ vars.UPDATE_SOURCE_REPOSITORY }}
 
     steps:
       - name: Check update token
@@ -19,6 +19,10 @@ jobs:
         run: |
           if [ -z "${UPDATE_TOKEN}" ]; then
             echo "::error::Add MAILFLARE_UPDATE_TOKEN as a repository Actions secret."
+            exit 1
+          fi
+          if [ -z "${UPDATE_SOURCE_REPOSITORY}" ]; then
+            echo "::error::Set the UPDATE_SOURCE_REPOSITORY repository variable to your canonical FlareSuite repository (owner/name)."
             exit 1
           fi
 
@@ -31,8 +35,8 @@ jobs:
       - name: Replace repository with upstream source
         run: |
           set -euo pipefail
-          git config user.name "mailflare-update"
-          git config user.email "mailflare-update@users.noreply.github.com"
+          git config user.name "flaresuite-update"
+          git config user.email "flaresuite-update@users.noreply.github.com"
 
           upstream_url="https://github.com/${UPDATE_SOURCE_REPOSITORY}.git"
           if git remote get-url upstream >/dev/null 2>&1; then
@@ -57,7 +61,7 @@ jobs:
             echo "Repository is already up to date."
             exit 0
           fi
-          git commit -m "Update Mailflare from ${UPDATE_SOURCE_REPOSITORY}@${upstream_branch}"
+          git commit -m "Update FlareSuite from ${UPDATE_SOURCE_REPOSITORY}@${upstream_branch}"
 
       - name: Push update
         run: |

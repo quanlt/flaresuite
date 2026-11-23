@@ -49,3 +49,15 @@ export function normalizeLicensePlan(productId: string | undefined, plan: string
 	const normalized = plan?.trim().toLowerCase();
 	return normalized === "pro" || normalized === "team" ? normalized : null;
 }
+
+/**
+ * A plan granted by the hosting provider instead of a license key: FlareSuite Cloud starts each workspace with
+ * MANAGED_PLAN (pro or team) and MANAGED_SEAT_LIMIT (accounts; empty or 0 means unlimited). Only whoever controls
+ * the server environment can set these, the same trust as the database itself.
+ */
+export function readManagedPlan(env: { MANAGED_PLAN?: string; MANAGED_SEAT_LIMIT?: string }): { plan: "pro" | "team"; seatLimit: number | null } | null {
+	const plan = env.MANAGED_PLAN?.trim().toLowerCase();
+	if (plan !== "pro" && plan !== "team") return null;
+	const seats = Number.parseInt(env.MANAGED_SEAT_LIMIT ?? "", 10);
+	return { plan, seatLimit: Number.isFinite(seats) && seats > 0 ? seats : null };
+}

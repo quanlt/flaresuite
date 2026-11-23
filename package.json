@@ -1,5 +1,5 @@
 {
-  "name": "mailflare",
+  "name": "flaresuite",
   "version": "0.5.5",
   "private": true,
   "scripts": {
@@ -42,7 +42,7 @@
         "description": "Cloudflare Turnstile public site key used by the login and first-run registration widgets."
       },
       "CF_EMAIL_WORKER_NAME": {
-        "description": "Worker name used when creating Cloudflare Email Routing rules. Set this to the deployed Worker name; if you rename the Worker, update this value too."
+        "description": "Worker name used when creating Cloudflare Email Routing rules (default flaresuite). Set this to the deployed Worker name; if you rename the Worker, update this value too."
       },
       "GITHUB_UPDATE_TOKEN": {
         "description": "Fine-grained GitHub token for the installation repository with Actions: write permission. Used by the admin update endpoint to dispatch deploy-update.yml."
@@ -52,6 +52,9 @@
       },
       "GITHUB_UPDATE_REPO": {
         "description": "Your github repository that connect to cloudflare worker"
+      },
+      "UPDATE_SOURCE_REPOSITORY": {
+        "description": "Your canonical FlareSuite repository (owner/name) the admin self-update reads releases from. Never set it to upstream Mailflare."
       },
       "CF_EMAIL": {
         "description": "Legacy Global API Key auth only. Use this with `CF_API_KEY` instead of `CF_TOKEN`."
@@ -163,5 +166,14 @@
   "type": "module",
   "optionalDependencies": {
     "@electric-sql/pglite": "^0.5.11"
+  },
+  "allowScripts": {
+    "esbuild@0.25.12": true,
+    "esbuild@0.28.2": true,
+    "esbuild@0.28.1": true,
+    "@parcel/watcher@2.6.0": true,
+    "better-sqlite3@13.0.3": true,
+    "workerd@1.20260926.1": true,
+    "core-js-pure": false
   }
 }

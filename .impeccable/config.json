@@ -1,0 +1,14 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "overused-font",
+        "value": "arial",
+        "createdAt": "2026-11-23T05:30:35.825Z",
+        "reason": "agent: Arial is the default body font of exported/printed documents in the Docs editor, a web-safe document font matching Word/Docs defaults, not an interface typeface"
+      }
+    ]
+  }
+}

@@ -22,7 +22,7 @@ or its mailbox is disabled; they also expire on their own.
   signal and is delivered as before.
 
 Sender-written `Authentication-Results`, `Received-SPF` and `Received` headers are never
-trusted on the SMTP path. The listener also refuses recipients on domains Mailflare does not
+trusted on the SMTP path. The listener also refuses recipients on domains FlareSuite does not
 manage before accepting DATA.
 
 ## Webhooks
@@ -33,13 +33,13 @@ trigger `message.inbound`. A webhook copies message content to the URL, so creat
 
 ## Forwarding loop guard
 
-Mail Mailflare forwards carries `X-Mailflare-Forwarded`, an HMAC keyed with a server secret
+Mail FlareSuite forwards carries `X-Mailflare-Forwarded`, an HMAC keyed with a server secret
 (`CF_TOKEN`, `CF_API_KEY` or `INBOUND_WEBHOOK_SECRET`). A sender cannot switch forwarding
 off by adding the header. With none of those set the header falls back to `1`.
 
 ## Attachments
 
-Mailflare does not run an antivirus engine. What it does instead:
+FlareSuite does not run an antivirus engine. What it does instead:
 
 * SES, and Resend (which receives through SES), drop mail the provider flagged as infected.
 * Every attachment is judged from its name and type: programs and scripts, macro-enabled

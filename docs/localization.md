@@ -1,6 +1,6 @@
 # Interface languages
 
-Mailflare defaults to English and ships 34 interface languages. Visitors switch language from the homepage or sign-in page, and signed-in users can set it under **Settings → Account → General**, next to their time zone.
+FlareSuite defaults to English and ships 34 interface languages. Visitors switch language from the homepage or sign-in page, and signed-in users can set it under **Settings → Account → General**, next to their time zone.
 
 ## Current coverage
 

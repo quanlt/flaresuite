@@ -7,6 +7,8 @@ import { useLanguage } from "@/components/language-provider";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import { authFetch } from "@/lib/auth/client";
 import type { DriveItemDto, DriveShareDto, DriveShareRole } from "@/lib/drive/types";
 import { Select } from "@/components/ui/select";
@@ -19,6 +21,8 @@ export function DriveShareDialog({ item, onClose, onChanged }: { item: DriveItem
 	const [linkToken, setLinkToken] = useState<string | null>(null);
 	const [email, setEmail] = useState("");
 	const [role, setRole] = useState<DriveShareRole>("view");
+	const [notify, setNotify] = useState(true);
+	const [message, setMessage] = useState("");
 	const [busy, setBusy] = useState(false);
 	const id = item?.id;
 
@@ -26,7 +30,7 @@ export function DriveShareDialog({ item, onClose, onChanged }: { item: DriveItem
 	const [loadedFor, setLoadedFor] = useState({ id, t });
 	if (loadedFor.id !== id || loadedFor.t !== t) {
 		setLoadedFor({ id, t });
-		setShares([]); setLinkToken(null); setEmail("");
+		setShares([]); setLinkToken(null); setEmail(""); setMessage("");
 	}
 
 	useEffect(() => {
@@ -52,7 +56,7 @@ export function DriveShareDialog({ item, onClose, onChanged }: { item: DriveItem
 		setBusy(true);
 		try {
 			const response = await authFetch(input, init);
-			const data = await response.json().catch(() => ({})) as { shares?: DriveShareDto[]; linkToken?: string | null; error?: string };
+			const data = await response.json().catch(() => ({})) as { shares?: DriveShareDto[]; linkToken?: string | null; notified?: boolean; error?: string };
 			if (!response.ok) { toast.error(data.error ?? t("drive.shareFailed")); return null; }
 			onChanged();
 			return data;
@@ -62,8 +66,18 @@ export function DriveShareDialog({ item, onClose, onChanged }: { item: DriveItem
 	async function addPerson(event: React.FormEvent) {
 		event.preventDefault();
 		if (!item || !email.trim()) return;
-		const data = await request(`/api/drive/items/${item.id}/shares`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, role }) });
-		if (data?.shares) { setShares(data.shares); setEmail(""); }
+		const data = await request(`/api/drive/items/${item.id}/shares`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, role, notify, message: notify ? message : undefined }) });
+		if (data?.shares) {
+			setShares(data.shares); setEmail(""); setMessage("");
+			toast.success(data.notified ? t("share.sharedAndNotified") : t("share.shared"));
+		}
+	}
+
+	/** Re-posting a person with another role changes it; the server sends no second email. */
+	async function changeRole(share: DriveShareDto, next: DriveShareRole) {
+		if (!item || share.role === next) return;
+		const data = await request(`/api/drive/items/${item.id}/shares`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: share.email, role: next, notify: false }) });
+		if (data?.shares) setShares(data.shares);
 	}
 
 	async function removePerson(shareId: string) {
@@ -92,13 +106,23 @@ export function DriveShareDialog({ item, onClose, onChanged }: { item: DriveItem
 					</Select>
 					<Button type="submit" disabled={busy || !email.trim()}>{t("drive.shareAdd")}</Button>
 				</form>
+				{email.trim() && (
+					<div className="mt-3 space-y-2">
+						<label className="flex items-center gap-2 text-sm text-neutral-700"><Checkbox checked={notify} onChange={(event) => setNotify(event.target.checked)} />{t("share.notifyPeople")}</label>
+						{notify && <Textarea value={message} onChange={(event) => setMessage(event.target.value)} placeholder={t("share.messagePlaceholder")} aria-label={t("share.messagePlaceholder")} rows={3} maxLength={1000} />}
+					</div>
+				)}
+				<p className="mt-2 text-xs text-neutral-500">{role === "edit" ? t("share.editHint") : t("share.viewHint")}</p>
 				<h3 className="mb-2 mt-6 text-sm font-medium text-neutral-900">{t("drive.peopleWithAccess")}</h3>
 				{shares.length === 0 ? <p className="text-sm text-neutral-500">{t("drive.noPeople")}</p> : (
 					<ul className="space-y-1">
 						{shares.map((share) => (
 							<li key={share.id} className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-neutral-50">
 								<span className="min-w-0 flex-1"><span className="block truncate text-neutral-900">{share.name}</span><span className="block truncate text-xs text-neutral-500">{share.email}</span></span>
-								<span className="shrink-0 text-xs text-neutral-500">{share.role === "edit" ? t("drive.canEdit") : t("drive.canView")}</span>
+								<Select value={share.role} disabled={busy} onChange={(event) => void changeRole(share, event.target.value as DriveShareRole)} className="h-8 w-auto shrink-0 text-xs" aria-label={t("share.roleFor", { name: share.name || share.email })}>
+									<option value="view">{t("drive.canView")}</option>
+									<option value="edit">{t("drive.canEdit")}</option>
+								</Select>
 								<button type="button" onClick={() => void removePerson(share.id)} disabled={busy} aria-label={t("drive.remove")} className="rounded-full p-1 text-neutral-500 hover:bg-neutral-200"><X size={14} /></button>
 							</li>
 						))}

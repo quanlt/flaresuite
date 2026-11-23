@@ -1,6 +1,6 @@
-# Self-hosting Mailflare (Docker)
+# Self-hosting FlareSuite (Docker)
 
-Mailflare can run as a single container on any host instead of Cloudflare
+FlareSuite can run as a single container on any host instead of Cloudflare
 Workers. The same code serves both; the container provides its own database
 (SQLite on a volume), blob storage (files on the same volume), job queue,
 realtime WebSocket, backup schedule and an SMTP listener for inbound mail.
@@ -8,13 +8,13 @@ realtime WebSocket, backup schedule and an SMTP listener for inbound mail.
 ## Quick start
 
 ```bash
-git clone https://github.com/hieunc229/mailflare && cd mailflare
+git clone https://github.com/quanlt/flaresuite && cd flaresuite
 cp .env.docker.example .env.docker      # edit: how to receive and send mail
 docker compose up -d --build
 ```
 
 Open `http://your-host:3000/setup`, create the admin account and add your
-domain. All data lives in the `mailflare-data` volume (`/data` in the
+domain. All data lives in the `flaresuite-data` volume (`/data` in the
 container): the SQLite database, raw messages, attachments and backups.
 
 Behind a reverse proxy, set `APP_URL=https://mail.example.com` so links in
@@ -28,7 +28,7 @@ origin, so they need `APP_URL` (or a direct HTTPS connection) to work.
 ### Prebuilt image (no build)
 
 Every push to `main` publishes a multi-arch (`linux/amd64`, `linux/arm64`)
-image to `ghcr.io/hieunc229/mailflare`. Use it instead of building from source:
+image to `ghcr.io/quanlt/flaresuite`. Use it instead of building from source:
 
 ```bash
 cp .env.docker.example .env.docker      # edit: how to receive and send mail
@@ -46,7 +46,7 @@ checkout. `docker-compose.yml` still builds from source.
 
 **Upgrade (NAS or server).**
 
-1. Back up: copy the `mailflare-data` volume, or download a backup from the
+1. Back up: copy the `flaresuite-data` volume, or download a backup from the
    admin Backups page.
 2. Pull the image and recreate the container: `docker compose -f
    docker-compose.image.yml pull && docker compose -f docker-compose.image.yml up -d`.
@@ -67,7 +67,7 @@ arg under `build:` in `docker-compose.yml`) and set `TURNSTILE_SECRET_KEY`.
 
 ### PWA and push notifications
 
-Mailflare can be installed as a PWA and can deliver new-mail notifications
+FlareSuite can be installed as a PWA and can deliver new-mail notifications
 after the browser is closed. Generate one VAPID key pair for the installation:
 
 ```bash
@@ -113,11 +113,11 @@ certificate on a private network.
 
 **Cloudflare Email Sending.** `CF_ACCOUNT_ID` plus a `CF_TOKEN` with Email
 Sending: Edit. The domain must be a Cloudflare zone with Email Sending set
-up; Mailflare calls the REST API, no Workers plan needed.
+up; FlareSuite calls the REST API, no Workers plan needed.
 
 **Resend or Amazon SES, per domain.** Instead of one global relay, each domain
 can send through Resend or SES with their APIs (no SMTP involved), and receive
-through them too, once Mailflare can manage the domain's DNS with `CF_TOKEN`.
+through them too, once FlareSuite can manage the domain's DNS with `CF_TOKEN`.
 Add the credentials on the domain page, or set `RESEND_API_KEY` /
 `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` and `AWS_REGION`. Receiving
 through either needs `APP_URL` set to your public HTTPS address. See
@@ -147,7 +147,7 @@ and the DNS page shows what to set by hand.
 | `SMTP_TLS_KEY`, `SMTP_TLS_CERT` | unset | STARTTLS certificate for the listener |
 | `SMTP_URL` | unset | Outbound relay |
 | `SMTP_TLS_REJECT_UNAUTHORIZED` | `true` | Trust self-signed relay certificates when `false` |
-| `CF_EMAIL_WORKER_NAME` | `mailflare` | Worker name that Email Routing rules created through the Cloudflare API target. If you change it on an install whose rules already target `mailflare`, recreate those rules; the old ones are no longer recognised |
+| `CF_EMAIL_WORKER_NAME` | `flaresuite` | Worker name that Email Routing rules created through the Cloudflare API target. If you change it on an install whose rules already target `flaresuite`, recreate those rules; the old ones are no longer recognised |
 | `CF_ACCOUNT_ID`, `CF_TOKEN` | unset | Cloudflare Email Sending, and zone management if the token allows |
 | `B2_KEY_ID`, `B2_APPLICATION_KEY`, `B2_BUCKET`, `B2_ENDPOINT` | unset | Store blobs in Backblaze B2 (all four required) instead of files under `/data/blobs`; see [Deployment](deployment.md#object-storage-r2-or-backblaze-b2) |
 | `S3_BUCKET`, `S3_REGION`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY` | unset | Store blobs in AWS S3; the keys fall back to `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`. Backblaze wins if both are set |
@@ -173,7 +173,7 @@ and the DNS page shows what to set by hand.
   for a full copy.
 - **Updates.** Pull the new image and recreate the container; migrations run
   at start (see [Prebuilt image](#prebuilt-image-no-build)). The in-app update button is disabled on self-hosted installs.
-- **Logs.** `docker compose logs -f mailflare`.
+- **Logs.** `docker compose logs -f flaresuite`.
 - **Queues.** Jobs are held in memory and are not re-queued after a restart.
   Inbound mail is written to the volume before it is queued, but a message
   whose job is lost stays unparsed, and the nightly clean-up removes raw
@@ -185,7 +185,7 @@ and the DNS page shows what to set by hand.
 
 Set `AI_BASE_URL`, `AI_API_KEY`, and `AI_MODEL` in the container environment to configure the built-in assistant. These values stay on the server. Assistant chat is available by default when a provider is configured; a mailbox manager can change its writing instructions and availability through the settings button in the assistant panel. Automatic reply drafts remain off until enabled there. Auto-draft work is recorded in SQLite and retried after a restart by the local scheduler. AI failure does not reject inbound mail. Out-of-office auto-replies and AI auto-drafts are separate features; turn off out-of-office replies before enabling auto-drafts for a mailbox.
 
-The MCP endpoint is `/mcp`. Create a dedicated mailbox-scoped Bearer key in **Assistant → MCP** and give the key to a client that supports custom HTTP headers. The endpoint uses Streamable HTTP; `request_send` gives the client a review URL, and only an authenticated Mailflare browser session can confirm delivery. MCP read and draft tools remain available when no AI model is configured.
+The MCP endpoint is `/mcp`. Create a dedicated mailbox-scoped Bearer key in **Assistant → MCP** and give the key to a client that supports custom HTTP headers. The endpoint uses Streamable HTTP; `request_send` gives the client a review URL, and only an authenticated FlareSuite browser session can confirm delivery. MCP read and draft tools remain available when no AI model is configured.
 
 ## Running without Docker
 

@@ -64,5 +64,5 @@ export function getCloudflareAuthHint(errors: CfApiError[], path = "") {
 }
 
 export function getEmailWorkerName(env?: { CF_EMAIL_WORKER_NAME?: string }): string {
-	return env?.CF_EMAIL_WORKER_NAME?.trim() || "mailflare";
+	return env?.CF_EMAIL_WORKER_NAME?.trim() || "flaresuite";
 }

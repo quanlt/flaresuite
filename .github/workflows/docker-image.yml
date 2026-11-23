@@ -16,7 +16,7 @@ jobs:
     # Update Mailflare copies .github/workflows into every installation
     # repository; this keeps the image from being built (and using Actions
     # minutes) there.
-    if: github.repository == 'hieunc229/mailflare'
+    if: vars.PUBLISH_DOCKER_IMAGE == 'true'
     strategy:
       fail-fast: false
       matrix:
@@ -80,7 +80,7 @@ jobs:
           retention-days: 1
 
   merge:
-    if: github.repository == 'hieunc229/mailflare'
+    if: vars.PUBLISH_DOCKER_IMAGE == 'true'
     runs-on: ubuntu-24.04
     needs: build
     permissions:

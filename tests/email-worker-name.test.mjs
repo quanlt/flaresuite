@@ -7,8 +7,8 @@ const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const { getEmailWorkerName } = await import(pathToFileURL(join(root, "src/lib/cloudflare-api-utils.ts")).href);
 
 test("getEmailWorkerName defaults to mailflare", () => {
-	assert.equal(getEmailWorkerName({}), "mailflare");
-	assert.equal(getEmailWorkerName({ CF_EMAIL_WORKER_NAME: "  " }), "mailflare");
+	assert.equal(getEmailWorkerName({}), "flaresuite");
+	assert.equal(getEmailWorkerName({ CF_EMAIL_WORKER_NAME: "  " }), "flaresuite");
 });
 
 test("getEmailWorkerName honours CF_EMAIL_WORKER_NAME", () => {

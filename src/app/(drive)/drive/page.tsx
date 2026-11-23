@@ -17,7 +17,9 @@ import { Input } from "@/components/ui/input";
 import { authFetch } from "@/lib/auth/client";
 import { canEditDrive, DRIVE_MAX_FILE_BYTES, formatDriveSize } from "@/lib/drive/utils";
 import type { DriveItemDto } from "@/lib/drive/types";
-import { DRIVE_FOLDERS_EVENT, DRIVE_NEW_FOLDER_EVENT, DRIVE_REFRESH_EVENT, DRIVE_STORAGE_EVENT, DRIVE_UPLOAD_EVENT } from "../drive-events";
+import { DRIVE_FOLDERS_EVENT, DRIVE_NEW_FOLDER_EVENT, DRIVE_NEW_OFFICE_EVENT, DRIVE_REFRESH_EVENT, DRIVE_STORAGE_EVENT, DRIVE_UPLOAD_EVENT } from "../drive-events";
+import { isOfficeKind, officeEditorPath, officeKindFromContentType } from "@/lib/office/utils";
+import { createOfficeDocument } from "@/components/office/office-requests";
 import { DrivePreviewBody } from "../drive-preview";
 import { DriveShareDialog } from "../drive-share-dialog";
 import { driveFileUrl, driveIconFor, emailUrl, sortDriveItems } from "../drive-utils";
@@ -154,13 +156,24 @@ export default function DrivePage() {
 
 	const canWriteRef = useRef(canWrite);
 	useEffect(() => { canWriteRef.current = canWrite; }, [canWrite]);
+	const folderRef = useRef(folder);
+	useEffect(() => { folderRef.current = folder; }, [folder]);
 	useEffect(() => {
 		const onUpload = () => { if (canWriteRef.current) fileInput.current?.click(); };
 		const onFolder = () => { if (canWriteRef.current) setNaming({ mode: "create", value: t("drive.untitledFolder") }); };
+		// A new Docs, Sheets or Slides file goes into the open folder when it is writable, otherwise into My Drive.
+		const onOffice = (event: Event) => {
+			const kind = (event as CustomEvent<unknown>).detail;
+			if (!isOfficeKind(kind)) return;
+			void createOfficeDocument(kind, { parentId: canWriteRef.current ? folderRef.current : null })
+				.then((item) => router.push(officeEditorPath(kind, item.id)))
+				.catch(() => toast.error(t("office.createFailed")));
+		};
 		window.addEventListener(DRIVE_UPLOAD_EVENT, onUpload);
 		window.addEventListener(DRIVE_NEW_FOLDER_EVENT, onFolder);
-		return () => { window.removeEventListener(DRIVE_UPLOAD_EVENT, onUpload); window.removeEventListener(DRIVE_NEW_FOLDER_EVENT, onFolder); };
-	}, [t]);
+		window.addEventListener(DRIVE_NEW_OFFICE_EVENT, onOffice);
+		return () => { window.removeEventListener(DRIVE_UPLOAD_EVENT, onUpload); window.removeEventListener(DRIVE_NEW_FOLDER_EVENT, onFolder); window.removeEventListener(DRIVE_NEW_OFFICE_EVENT, onOffice); };
+	}, [t, router]);
 
 	async function mutate(url: string, init: RequestInit, successMessage?: string) {
 		try {
@@ -191,7 +204,9 @@ export default function DrivePage() {
 
 	function open(item: DriveItemDto) {
 		if (item.trashedAt) return;
+		const office = item.source ? null : officeKindFromContentType(item.contentType);
 		if (item.kind === "folder") router.push(`/drive?folder=${encodeURIComponent(item.id)}${view === "shared" ? "&view=shared" : ""}`);
+		else if (office) router.push(officeEditorPath(office, item.id));
 		else setPreview(item);
 	}
 
@@ -314,7 +329,7 @@ export default function DrivePage() {
 						))
 						: sorted.length === 0 ? <p className="p-12 text-center text-sm text-neutral-500">{emptyText}</p>
 						: sorted.map((item) => {
-							const { Icon, className } = driveIconFor(item);
+							const { Icon, className, style: iconStyle } = driveIconFor(item);
 							// Only the owner's own folders take drops, matching what the move endpoint allows.
 							const dropTarget = item.kind === "folder" && item.role === "owner" && !item.trashedAt && !item.source
 								? driveDropHandlers({ kind: "folder", id: item.id }, () => canDropDrive({ kind: "folder", id: item.id }), t, (over) => setDropFolder((current) => (over ? item.id : current === item.id ? null : current)))
@@ -323,7 +338,7 @@ export default function DrivePage() {
 								<div key={item.id} role="listitem" style={gridStyle} draggable={isDriveDraggable(item)} onDragStart={(event) => onItemDragStart(event, item)} onDragEnd={onItemDragEnd} {...dropTarget} className={clsx("group grid grid-cols-[2rem_minmax(0,1fr)_2.5rem] items-center gap-x-4 rounded-lg px-3 text-sm md:grid-cols-[var(--drive-columns)]", dropFolder === item.id ? "bg-blue-100 ring-2 ring-inset ring-blue-500" : selectedIds.has(item.id) ? "bg-blue-50" : "hover:bg-neutral-50", movingIds.has(item.id) && "opacity-50")}>
 									<Checkbox checked={selectedIds.has(item.id)} onChange={() => toggleItem(item.id)} disabled={!selectableIds.has(item.id)} aria-label={t("drive.selectItem", { name: item.name })} className={clsx("ml-1", !selectableIds.has(item.id) && "invisible")} />
 									<button type="button" onClick={() => open(item)} aria-disabled={item.trashedAt ? true : undefined} className="flex min-w-0 items-center gap-3 py-3 text-left aria-disabled:cursor-default">
-										<Icon size={16} className={clsx("shrink-0", className)} fill={item.kind === "folder" ? "currentColor" : "none"} />
+										<Icon size={16} className={clsx("shrink-0", className)} style={iconStyle} fill={item.kind === "folder" ? "currentColor" : "none"} />
 										<span className="truncate text-neutral-900">{item.name}</span>
 										{item.shared && item.role === "owner" && <Share2 size={12} className="shrink-0 text-neutral-500" aria-label={t("drive.share")} />}
 									</button>
@@ -337,7 +352,7 @@ export default function DrivePage() {
 										<DropdownMenu.Portal>
 											<DropdownMenu.Content align="end" sideOffset={4} className="z-[200] min-w-52 rounded-xl border border-neutral-200 bg-white p-1.5 shadow-xl">
 												{!item.trashedAt && <DropdownMenu.Item className={menuItemClass} onSelect={() => open(item)}>{t("drive.open")}</DropdownMenu.Item>}
-												{item.kind === "file" && !(item.source && item.trashedAt) && <DropdownMenu.Item asChild className={menuItemClass}><a href={driveFileUrl(item, true)}><Download size={16} />{t("drive.download")}</a></DropdownMenu.Item>}
+												{item.kind === "file" && !(item.source && item.trashedAt) && !officeKindFromContentType(item.contentType) && <DropdownMenu.Item asChild className={menuItemClass}><a href={driveFileUrl(item, true)}><Download size={16} />{t("drive.download")}</a></DropdownMenu.Item>}
 												{item.source && !item.trashedAt && <DropdownMenu.Item asChild className={menuItemClass}><a href={emailUrl(item.source)} target="_blank" rel="noopener noreferrer"><Mail size={16} />{t("drive.openEmail")}<span className="sr-only"> ({t("common.opensInNewTab")})</span></a></DropdownMenu.Item>}
 												{item.role === "owner" && !item.trashedAt && <DropdownMenu.Item className={menuItemClass} onSelect={() => setSharing(item)}><Share2 size={16} />{t("drive.share")}</DropdownMenu.Item>}
 												{canEditDrive(item.role) && !item.trashedAt && <DropdownMenu.Item className={menuItemClass} onSelect={() => setNaming({ mode: "rename", item, value: item.name })}><Pencil size={16} />{t("drive.rename")}</DropdownMenu.Item>}

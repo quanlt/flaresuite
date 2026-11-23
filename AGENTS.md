@@ -2,7 +2,7 @@
 
 ## Database schema changes: update every dialect
 
-Mailflare runs on SQLite/D1, PostgreSQL and MySQL from one schema file. Any change to `src/db/schema/index.ts` (table, column, index, default) **must ship a migration for all three dialects in the same change**:
+FlareSuite runs on SQLite/D1, PostgreSQL and MySQL from one schema file. Any change to `src/db/schema/index.ts` (table, column, index, default) **must ship a migration for all three dialects in the same change**:
 
 1. `npm run db:generate` → `drizzle/migrations/` (SQLite/D1)
 2. `npm run db:generate:pg` → `drizzle/migrations-pg/` (PostgreSQL)

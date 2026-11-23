@@ -34,19 +34,23 @@ export function SidebarFooter() {
   );
 }
 
-/** The "Powered by Mailflare vX" credit, shared by the mail and Drive sidebars. */
+/**
+ * The "FlareSuite vX" credit, shared by the mail and Drive sidebars. It also
+ * carries the AGPL-3.0 source offer (section 13): set NEXT_PUBLIC_SOURCE_CODE_URL
+ * to the public repository of the code this server runs.
+ */
 export function PoweredBy({ className = "px-1" }: { className?: string }) {
 	const { t } = useLanguage();
+	const sourceUrl = process.env.NEXT_PUBLIC_SOURCE_CODE_URL || "https://github.com/quanlt/flaresuite";
 	return (
       <p className={`${className} text-[11px] text-neutral-500`}>
         {t("navigation.poweredBy")}{" "}
-        <a
-          href={`https://mailflare.co/?ref=${typeof window !== "undefined" ? location.hostname : ""}&v=${packageJson.version}`}
-          target="_blank"
-          className="hover:underline text-neutral-500"
-          rel="noreferrer"
-        >
-          Mailflare v{packageJson.version}
+        <a href={sourceUrl} target="_blank" className="hover:underline text-neutral-500" rel="noreferrer">
+          FlareSuite v{packageJson.version}
+        </a>
+        {" · "}
+        <a href={sourceUrl} target="_blank" className="hover:underline text-neutral-500" rel="noreferrer">
+          Source (AGPL-3.0)
         </a>
       </p>
 	);

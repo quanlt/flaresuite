@@ -6,7 +6,7 @@ import { usePathname, useSearchParams } from "next/navigation";
 import clsx from "clsx";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import toast from "react-hot-toast";
-import { ChevronRight, Folder, FolderPlus, HardDrive, Paperclip, Plus, Trash2, UploadCloud, UsersRound } from "@/components/icons";
+import { ChevronRight, FileSpreadsheet, FileText, Folder, FolderPlus, HardDrive, Paperclip, Plus, Presentation, Trash2, UploadCloud, UsersRound } from "@/components/icons";
 import { useLanguage } from "@/components/language-provider";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -15,7 +15,7 @@ import { PoweredBy } from "@/components/sidebar-footer";
 import { useSidebar } from "@/components/sidebar-state";
 import { authFetch } from "@/lib/auth/client";
 import { formatDriveSize } from "@/lib/drive/utils";
-import { DRIVE_FOLDERS_EVENT, DRIVE_NEW_FOLDER_EVENT, DRIVE_REFRESH_EVENT, DRIVE_STORAGE_EVENT, DRIVE_UPLOAD_EVENT } from "./drive-events";
+import { DRIVE_FOLDERS_EVENT, DRIVE_NEW_FOLDER_EVENT, DRIVE_NEW_OFFICE_EVENT, DRIVE_REFRESH_EVENT, DRIVE_STORAGE_EVENT, DRIVE_UPLOAD_EVENT } from "./drive-events";
 import type { DriveStorageDetail } from "./drive-events";
 import { canDropDrive, driveDropHandlers } from "./drive-drag";
 import type { DriveDropTarget } from "./drive-drag";
@@ -139,6 +139,10 @@ export function DriveNav({ onNavigate }: { onNavigate?: () => void }) {
 							<DropdownMenu.Item className={itemClass} onSelect={() => { window.dispatchEvent(new Event(DRIVE_NEW_FOLDER_EVENT)); onNavigate?.(); }}><FolderPlus size={18} />{t("drive.newFolder")}</DropdownMenu.Item>
 							<DropdownMenu.Separator className="my-1 h-px bg-neutral-100" />
 							<DropdownMenu.Item className={itemClass} onSelect={() => { window.dispatchEvent(new Event(DRIVE_UPLOAD_EVENT)); onNavigate?.(); }}><UploadCloud size={18} />{t("drive.fileUpload")}</DropdownMenu.Item>
+							<DropdownMenu.Separator className="my-1 h-px bg-neutral-100" />
+							<DropdownMenu.Item className={itemClass} onSelect={() => { window.dispatchEvent(new CustomEvent(DRIVE_NEW_OFFICE_EVENT, { detail: "document" })); onNavigate?.(); }}><FileText size={18} style={{ color: "#1a73e8" }} />{t("apps.docs")}</DropdownMenu.Item>
+							<DropdownMenu.Item className={itemClass} onSelect={() => { window.dispatchEvent(new CustomEvent(DRIVE_NEW_OFFICE_EVENT, { detail: "spreadsheet" })); onNavigate?.(); }}><FileSpreadsheet size={18} style={{ color: "#188038" }} />{t("apps.sheets")}</DropdownMenu.Item>
+							<DropdownMenu.Item className={itemClass} onSelect={() => { window.dispatchEvent(new CustomEvent(DRIVE_NEW_OFFICE_EVENT, { detail: "presentation" })); onNavigate?.(); }}><Presentation size={18} style={{ color: "#e37400" }} />{t("apps.slides")}</DropdownMenu.Item>
 						</DropdownMenu.Content>
 					</DropdownMenu.Portal>
 				</DropdownMenu.Root>

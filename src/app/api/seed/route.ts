@@ -4,7 +4,7 @@ import { getDb } from "@/db";
 import { users } from "@/db/schema";
 import { getEnv } from "@/lib/cloudflare";
 import { seedDemoData } from "@/lib/seed";
-import { demoCredentials } from "@/lib/seed-utils";
+import { demoCredentials, demoMemberCredentials, ensureDemoMember } from "@/lib/seed-utils";
 
 export async function POST(request: Request) {
 	if (process.env.NODE_ENV === "production") {
@@ -21,9 +21,11 @@ export async function POST(request: Request) {
 		await db.delete(users).where(eq(users.email, demoCredentials.email));
 	}
 	const result = await seedDemoData(env);
+	await ensureDemoMember(env);
 	return NextResponse.json({
 		ok: true,
 		credentials: demoCredentials,
+		memberCredentials: demoMemberCredentials,
 		seeded: result,
 	});
 }

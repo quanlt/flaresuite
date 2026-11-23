@@ -354,6 +354,21 @@ export const seedMessages: SeedMessageDefinition[] = [
 	},
 ];
 
+/** A second, ordinary account for sharing tests (Docs, Sheets, Slides, Drive). Same password as the demo admin. */
+export const demoMemberCredentials = {
+	email: "member@example.com",
+	password: demoCredentials.password,
+};
+
+export async function ensureDemoMember(env: CloudflareEnv) {
+	const db = getDb(env);
+	const [existing] = await db.select({ id: users.id }).from(users).where(eq(users.email, demoMemberCredentials.email)).limit(1);
+	if (existing) return existing.id;
+	const id = newId("usr");
+	await db.insert(users).values({ id, email: demoMemberCredentials.email, passwordHash: hashPassword(demoMemberCredentials.password), name: "Demo Member", role: "user" });
+	return id;
+}
+
 export async function ensureDemoUser(env: CloudflareEnv) {
 	const db = getDb(env);
 	const [existing] = await db

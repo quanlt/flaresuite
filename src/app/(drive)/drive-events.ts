@@ -1,5 +1,7 @@
 export const DRIVE_UPLOAD_EVENT = "mailflare:drive-upload";
 export const DRIVE_NEW_FOLDER_EVENT = "mailflare:drive-new-folder";
+/** Detail: `OfficeKind`. Creates a Docs, Sheets or Slides file in the folder that is open. */
+export const DRIVE_NEW_OFFICE_EVENT = "flaresuite:drive-new-office";
 /** Detail: `DriveStorageDetail`. Sent by the page whenever a listing loads. */
 export const DRIVE_STORAGE_EVENT = "mailflare:drive-storage";
 /** Sent after a listing loads so the sidebar can refresh its folder list. */

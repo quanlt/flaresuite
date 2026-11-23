@@ -38,7 +38,7 @@ interface CloudflareEnv {
 	APNS_TEAM_ID?: string;
 	/** The .p8 file contents (PKCS#8 PEM). */
 	APNS_PRIVATE_KEY?: string;
-	/** Origin of a Mailflare push relay (mailflare-relay); lets this server push without APNS_* keys. */
+	/** Origin of a FlareSuite push relay (mailflare-relay); lets this server push without APNS_* keys. */
 	APNS_RELAY_URL?: string;
 	/** Spamhaus Data Query Service key; enables ZEN (sending IP) and DBL (domain) checks in spam analysis. */
 	SPAMHAUS_DQS_KEY?: string;
@@ -64,7 +64,7 @@ interface CloudflareEnv {
 	S3_ACCESS_KEY_ID?: string;
 	S3_SECRET_ACCESS_KEY?: string;
 	CF_TOKEN?: string;
-	/** Deployed Worker name Email Routing rules target; defaults to "mailflare". */
+	/** Deployed Worker name Email Routing rules target; defaults to "flaresuite". */
 	CF_EMAIL_WORKER_NAME?: string;
 	CF_API_KEY?: string;
 	CF_EMAIL?: string;
@@ -72,6 +72,14 @@ interface CloudflareEnv {
 	GITHUB_UPDATE_TOKEN?: string;
 	GITHUB_UPDATE_REF?: string;
 	GITHUB_UPDATE_REPO?: string;
+	/** Canonical FlareSuite repository (owner/name) the self-update reads releases from. */
+	UPDATE_SOURCE_REPOSITORY?: string;
+	/** FlareSuite Cloud: the plan this hosted workspace is on (pro or team), granted without a license key. */
+	MANAGED_PLAN?: string;
+	/** FlareSuite Cloud: account seats of the managed plan; empty or 0 is unlimited. */
+	MANAGED_SEAT_LIMIT?: string;
+	/** When set, the first-run setup only accepts a browser that opened /api/setup/claim?token=<this>. */
+	SETUP_TOKEN?: string;
 	/** "node" when served by the self-hosted runtime in server/; unset on Workers. */
 	MAILFLARE_RUNTIME?: "node";
 	/** Shared secret the Cloudflare email relay signs inbound webhooks with (self-hosted only). */

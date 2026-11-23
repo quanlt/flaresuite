@@ -10,7 +10,8 @@ export default defineConfig({
 		baseURL: process.env.PLAYWRIGHT_BASE_URL ?? "http://localhost:3000",
 		trace: "retain-on-failure",
 	},
-	projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
+	// PLAYWRIGHT_CHANNEL=chrome runs against an installed Google Chrome instead of the downloaded Chromium.
+	projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"], channel: process.env.PLAYWRIGHT_CHANNEL || undefined } }],
 	webServer: process.env.PLAYWRIGHT_BASE_URL
 		? undefined
 		: {

@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { useRef, useState } from "react";
-import { CalendarDays, HardDrive, Inbox, More01, UsersRound } from "@/components/icons";
+import { More01 } from "@/components/icons";
 import { useLanguage } from "@/components/language-provider";
 import { useDismissible } from "@/components/use-dismissible";
+import { visibleApps } from "@/lib/apps/registry";
 import type { AppsMenuProps } from "./mailbox-selector-types";
 
 export function AppsMenu({ user }: AppsMenuProps) {
@@ -13,12 +14,7 @@ export function AppsMenu({ user }: AppsMenuProps) {
 	const ref = useRef<HTMLDivElement>(null);
 	useDismissible(open, () => setOpen(false), ref);
 
-	const items = [
-		{ href: "/inbox", label: t("navigation.inbox"), icon: Inbox, show: true },
-		{ href: "/calendar", label: t("account.calendar"), icon: CalendarDays, show: user?.calendarEnabled !== false },
-		{ href: "/drive", label: t("account.drive"), icon: HardDrive, show: user?.driveEnabled !== false },
-		{ href: "/contacts", label: t("navigation.contacts"), icon: UsersRound, show: true },
-	].filter((item) => item.show);
+	const items = visibleApps(user).map((app) => ({ href: app.href, label: t(app.labelKey), icon: app.icon }));
 
 	return (
 		<div ref={ref} className="relative">

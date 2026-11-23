@@ -66,7 +66,7 @@ export function createCalendarInvitation(input: CalendarInvitationInput): ArrayB
 	const excluded = [...new Set((input.excludedOccurrences ?? []).filter((ms) => Number.isSafeInteger(ms) && ms >= 0))].sort((a, b) => a - b);
 	const organizerLine = organizer ? [`ORGANIZER:mailto:${organizer}`] : [];
 	const attendeeLines = organizer ? (input.attendees ?? []).filter((address) => isIcsAddress(address)).map((address) => `ATTENDEE;ROLE=REQ-PARTICIPANT;PARTSTAT=NEEDS-ACTION;RSVP=TRUE:mailto:${address}`) : [];
-	const lines = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Mailflare//Calendar//EN", "CALSCALE:GREGORIAN", `METHOD:${input.method ?? "REQUEST"}`, "BEGIN:VEVENT", `UID:${input.uid}@mailflare`, `DTSTAMP:${stamp}`, `SEQUENCE:${sequence}`, `DTSTART:${formatIcsUtc(input.startsAt)}`, `DTEND:${formatIcsUtc(input.endsAt)}`, `SUMMARY:${escapeIcsText(input.title)}`, `DESCRIPTION:${escapeIcsText(input.description)}`, `LOCATION:${escapeIcsText(input.location)}`,
+	const lines = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//FlareSuite//Calendar//EN", "CALSCALE:GREGORIAN", `METHOD:${input.method ?? "REQUEST"}`, "BEGIN:VEVENT", `UID:${input.uid}@mailflare`, `DTSTAMP:${stamp}`, `SEQUENCE:${sequence}`, `DTSTART:${formatIcsUtc(input.startsAt)}`, `DTEND:${formatIcsUtc(input.endsAt)}`, `SUMMARY:${escapeIcsText(input.title)}`, `DESCRIPTION:${escapeIcsText(input.description)}`, `LOCATION:${escapeIcsText(input.location)}`,
 		...(organizerLine),
 		...attendeeLines,
 		...(rule ? [rule] : []),

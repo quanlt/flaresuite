@@ -4,7 +4,7 @@ Checked 28 September 2026 against PR #52 (`26923a4`). The OpenNext comparison ch
 
 ## Conclusion
 
-No breaking application behavior was reproduced in the local paths exercised. The vinext Worker builds, previews, and passes a Wrangler deployment dry run; its HTTP, email, queue, and scheduled entrypoints work locally. **One new tooling regression should be fixed before merging:** the locked dependency set makes `tsc --noEmit` stop while parsing a dependency declaration, before it can check Mailflare source.
+No breaking application behavior was reproduced in the local paths exercised. The vinext Worker builds, previews, and passes a Wrangler deployment dry run; its HTTP, email, queue, and scheduled entrypoints work locally. **One new tooling regression should be fixed before merging:** the locked dependency set makes `tsc --noEmit` stop while parsing a dependency declaration, before it can check FlareSuite source.
 
 ## Finding: TypeScript checking stops in a new dependency (P2)
 

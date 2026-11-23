@@ -427,7 +427,7 @@ function readInvite(text: string, options: ParseInviteOptions): ParsedInvite | n
 }
 
 /**
- * Mailflare stores repeatUntil as an exclusive bound (`occurrence >= repeatUntil` stops the series) in whole seconds,
+ * FlareSuite stores repeatUntil as an exclusive bound (`occurrence >= repeatUntil` stops the series) in whole seconds,
  * while RFC 5545 UNTIL and the last COUNT occurrence are inclusive. One second past the last start keeps it.
  */
 const INCLUSIVE_PAD_MS = 1000;
@@ -514,7 +514,7 @@ function lastOccurrenceStart(start: Date, repeat: InviteRepeat, count: number, z
 }
 
 /**
- * Maps the RRULE shapes Mailflare can store; anything else becomes a one-off event on the first date.
+ * Maps the RRULE shapes FlareSuite can store; anything else becomes a one-off event on the first date.
  * `startsAt` (and the zone its clock time is in) is needed to turn COUNT into an end date.
  */
 export function inviteRepeat(rrule: string | null, startsAt?: Date, timeZone?: string | null): InviteRepeat {
@@ -531,7 +531,7 @@ export function inviteRepeat(rrule: string | null, startsAt?: Date, timeZone?: s
 	const withInterval = { ...none, repeatInterval: interval };
 	const byDays = [...new Set((rule.BYDAY ?? "").split(",").map((code) => WEEKDAY_CODES.indexOf(code.replace(/^[+-]?\d+/, ""))).filter((day) => day >= 0))].sort((a, b) => a - b);
 	let repeat: InviteRepeat;
-	// DAILY with BYDAY (Outlook's "every weekday") keeps only the listed days, which is Mailflare's weekdays repeat.
+	// DAILY with BYDAY (Outlook's "every weekday") keeps only the listed days, which is FlareSuite's weekdays repeat.
 	// A listed-days repeat steps day by day, so any INTERVAL above 1 cannot be stored.
 	if (rule.FREQ === "DAILY") {
 		if (byDays.length && interval !== 1) return none;
@@ -606,7 +606,7 @@ export function buildReplyIcs(invite: ParsedInvite, attendee: string, response: 
 	const dateValue = (name: string, value: Date) => invite.allDay
 		? `${name};VALUE=DATE:${zonedDateFields(value, normalizeTimeZone(invite.recipientZone)).toISOString().slice(0, 10).replace(/-/g, "")}`
 		: `${name}:${formatIcsUtc(value)}`;
-	const lines = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Mailflare//Calendar//EN", "METHOD:REPLY", "BEGIN:VEVENT", `UID:${stripControls(invite.uid)}`, `DTSTAMP:${formatIcsUtc(new Date())}`,
+	const lines = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//FlareSuite//Calendar//EN", "METHOD:REPLY", "BEGIN:VEVENT", `UID:${stripControls(invite.uid)}`, `DTSTAMP:${formatIcsUtc(new Date())}`,
 		dateValue("DTSTART", invite.startsAt),
 		...(invite.recurrenceId ? [dateValue("RECURRENCE-ID", invite.recurrenceId)] : []),
 		`SEQUENCE:${invite.sequence}`,
@@ -636,7 +636,7 @@ export function buildCounterIcs(invite: ParsedInvite, attendee: string, proposal
 	const dateValue = (name: string, value: Date) => invite.allDay
 		? `${name};VALUE=DATE:${zonedDateFields(value, normalizeTimeZone(invite.recipientZone)).toISOString().slice(0, 10).replace(/-/g, "")}`
 		: `${name}:${formatIcsUtc(value)}`;
-	const lines = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Mailflare//Calendar//EN", "METHOD:COUNTER", "BEGIN:VEVENT", `UID:${stripControls(invite.uid)}`, `DTSTAMP:${formatIcsUtc(new Date())}`,
+	const lines = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//FlareSuite//Calendar//EN", "METHOD:COUNTER", "BEGIN:VEVENT", `UID:${stripControls(invite.uid)}`, `DTSTAMP:${formatIcsUtc(new Date())}`,
 		dateValue("DTSTART", proposal.startsAt),
 		dateValue("DTEND", proposal.endsAt),
 		...(invite.recurrenceId ? [dateValue("RECURRENCE-ID", invite.recurrenceId)] : []),

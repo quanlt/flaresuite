@@ -56,6 +56,7 @@ import {
 	FileImageIcon as HugeFileImageIcon,
 	FileSpreadsheetIcon as HugeFileSpreadsheetIcon,
 	FileTextIcon as HugeFileTextIcon,
+	PrinterIcon as HugePrinterIcon,
 	FileTypeIcon as HugeFileTypeIcon,
 	FileVideoCameraIcon as HugeFileVideoCameraIcon,
 	FileVideoIcon as HugeFileVideoIcon,
@@ -238,6 +239,7 @@ export const FileCode2 = createIcon(HugeFileCodeCornerIcon, "FileCode2");
 export const FileImage = createIcon(HugeFileImageIcon, "FileImage");
 export const FileSpreadsheet = createIcon(HugeFileSpreadsheetIcon, "FileSpreadsheet");
 export const FileText = createIcon(HugeFileTextIcon, "FileText");
+export const Printer = createIcon(HugePrinterIcon, "Printer");
 export const FileType = createIcon(HugeFileTypeIcon, "FileType");
 export const FileVideo = createIcon(HugeFileVideoIcon, "FileVideo");
 export const FileVideoCamera = createIcon(HugeFileVideoCameraIcon, "FileVideoCamera");
