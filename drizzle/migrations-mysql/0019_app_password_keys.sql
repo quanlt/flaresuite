@@ -1,0 +1,3 @@
+INSERT INTO `app_passwords` (`id`, `user_id`, `name`, `prefix`, `password_sha256`, `created_at`, `last_used_at`) SELECT `id`, `user_id`, `name`, `prefix`, `key_sha256`, `created_at`, `last_used_at` FROM `api_keys` WHERE `kind` = 'legacy' AND `scopes` = '["jmap"]' AND char_length(`prefix`) = 6 AND `key_sha256` IS NOT NULL;--> statement-breakpoint
+DELETE FROM `mcp_key_mailboxes` WHERE `key_id` IN (SELECT `id` FROM (SELECT `id` FROM `api_keys` WHERE `kind` = 'legacy' AND `scopes` = '["jmap"]' AND char_length(`prefix`) = 6 AND `key_sha256` IS NOT NULL) AS `moved`);--> statement-breakpoint
+DELETE FROM `api_keys` WHERE `kind` = 'legacy' AND `scopes` = '["jmap"]' AND char_length(`prefix`) = 6 AND `key_sha256` IS NOT NULL;

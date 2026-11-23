@@ -89,6 +89,16 @@ test("an app password is created, signs mail apps in for mail only, and is revok
 	assert.equal(await authenticateApiRequest(f.env, f.basic(body.password)), null);
 });
 
+test("a JMAP-only API key is a full API key, never a 16-letter password", async (t) => {
+	const f = await fixture(t);
+	f.database.db.prepare("INSERT INTO domains (id, user_id, hostname, zone_id, status, created_at) VALUES ('d1', 'u1', 'acme.test', 'manual', 'active', 1)").run();
+	f.database.db.prepare("INSERT INTO mailboxes (id, user_id, domain_id, local_part, display_name, created_at) VALUES ('m1', 'u1', 'd1', 'ana', 'Ana', 1)").run();
+	const response = await apiKeys.POST(f.request("/api/api-keys", { method: "POST", body: JSON.stringify({ name: "Sync", scopes: ["jmap"], mailboxIds: ["m1"] }) }));
+	assert.equal(response.ok, true);
+	assert.match((await response.json()).key, /^ep_/);
+	assert.equal(f.database.db.prepare("SELECT COUNT(*) AS n FROM app_passwords").get().n, 0);
+});
+
 test("changing the password revokes every app password", async (t) => {
 	const f = await fixture(t);
 	const body = await (await list.POST(f.request("/api/app-passwords", { method: "POST", body: JSON.stringify({ name: "iPhone" }) }))).json();
@@ -106,17 +116,21 @@ test("the migration moves app passwords out of api_keys and drops mobile push re
 	const before = mkdtempSync(join(outDir, "migrations-"));
 	const { cpSync, mkdirSync, writeFileSync } = await import("node:fs");
 	mkdirSync(join(before, "meta"));
-	const kept = journal.entries.filter((entry) => entry.tag !== "0094_app_passwords");
+	const kept = journal.entries.filter((entry) => !["0094_app_passwords", "0095_app_password_keys"].includes(entry.tag));
 	for (const entry of kept) cpSync(join(dir, `${entry.tag}.sql`), join(before, `${entry.tag}.sql`));
 	writeFileSync(join(before, "meta/_journal.json"), JSON.stringify({ ...journal, entries: kept }));
 	await applyMigrations(database, before);
 	database.db.prepare("INSERT INTO users (id, email, name, password_hash, role, created_at) VALUES ('u1', 'ana@acme.test', 'Ana', 'x', 'admin', 1)").run();
 	database.db.prepare("INSERT INTO api_keys (id, user_id, name, prefix, key_hash, key_sha256, kind, scopes, created_at, last_used_at) VALUES ('key_old', 'u1', 'Outlook', 'abcdef', 'h', 'deadbeef', 'device', '[\"jmap\"]', 10, 20)").run();
 	database.db.prepare("INSERT INTO api_keys (id, user_id, name, prefix, key_hash, key_sha256, kind, scopes, created_at) VALUES ('key_api', 'u1', 'Script', 'ep_x', 'h2', 'cafe', 'legacy', '[\"read\"]', 10)").run();
+	// A 16-letter JMAP-only "API key" from the former App passwords page, and a real JMAP API key for a script.
+	database.db.prepare("INSERT INTO api_keys (id, user_id, name, prefix, key_hash, key_sha256, kind, scopes, mailbox_scope_enabled, created_at) VALUES ('key_mail', 'u1', 'outlook', 'Ab12cd', 'h3', 'beef', 'legacy', '[\"jmap\"]', 1, 11)").run();
+	database.db.prepare("INSERT INTO api_keys (id, user_id, name, prefix, key_hash, key_sha256, kind, scopes, created_at) VALUES ('key_jmap', 'u1', 'Sync script', 'ep_abcdefghi', 'h4', 'f00d', 'legacy', '[\"jmap\"]', 12)").run();
 	await applyMigrations(database, dir);
-	assert.deepEqual(database.db.prepare("SELECT id, user_id, name, prefix, password_sha256, created_at, last_used_at FROM app_passwords").all(), [
+	assert.deepEqual(database.db.prepare("SELECT id, user_id, name, prefix, password_sha256, created_at, last_used_at FROM app_passwords ORDER BY created_at").all(), [
 		{ id: "key_old", user_id: "u1", name: "Outlook", prefix: "abcdef", password_sha256: "deadbeef", created_at: 10, last_used_at: 20 },
+		{ id: "key_mail", user_id: "u1", name: "outlook", prefix: "Ab12cd", password_sha256: "beef", created_at: 11, last_used_at: null },
 	]);
-	assert.deepEqual(database.db.prepare("SELECT id FROM api_keys").all(), [{ id: "key_api" }]);
+	assert.deepEqual(database.db.prepare("SELECT id FROM api_keys ORDER BY id").all(), [{ id: "key_api" }, { id: "key_jmap" }]);
 	assert.equal(database.db.prepare("SELECT COUNT(*) AS n FROM sqlite_master WHERE name = 'push_devices'").get().n, 0);
 });

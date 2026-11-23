@@ -5,7 +5,7 @@ import { getEnv } from "@/lib/cloudflare";
 import { getDb } from "@/db";
 import { agentSendApprovals, apiKeys, mcpKeyMailboxes } from "@/db/schema";
 import { requireUser } from "@/lib/auth/cookies";
-import { generateApiKey, generateAppPassword, parseScopes, scopesToJson } from "@/lib/api-keys";
+import { generateApiKey, parseScopes, scopesToJson } from "@/lib/api-keys";
 import { API_KEY_SCOPES } from "@/lib/api/scopes";
 import { newId } from "@/lib/ids";
 import { ADMIN_API_KEY_SCOPES } from "@/lib/api/scopes";
@@ -49,8 +49,8 @@ export async function POST(request: Request) {
 		return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
 	}
 
-	const isAppPassword = parsed.data.scopes.length === 1 && parsed.data.scopes[0] === "jmap";
-	const { fullKey, prefix, hash, sha256 } = isAppPassword ? await generateAppPassword() : await generateApiKey();
+	// Always a full-length `ep_` key: passwords for mail apps are app passwords (Settings → App passwords), not API keys.
+	const { fullKey, prefix, hash, sha256 } = await generateApiKey();
 	const db = getDb(env);
 	const mailboxIds = [...new Set(parsed.data.mailboxIds)];
 	if (!mailboxIds.length && parsed.data.scopes.some((scope) => !scope.startsWith("calendar:"))) return NextResponse.json({ error: "Choose a mailbox for mail permissions" }, { status: 400 });
