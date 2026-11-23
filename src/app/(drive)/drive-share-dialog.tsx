@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
-import { Copy, Link2, X } from "@/components/icons";
+import { Copy, Globe2, LockKeyhole, X } from "@/components/icons";
 import { useLanguage } from "@/components/language-provider";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -12,6 +12,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { authFetch } from "@/lib/auth/client";
 import type { DriveItemDto, DriveShareDto, DriveShareRole } from "@/lib/drive/types";
 import { Select } from "@/components/ui/select";
+import { officeKindFromContentType } from "@/lib/office/utils";
 
 const selectClass = "h-10 text-sm";
 
@@ -19,6 +20,7 @@ export function DriveShareDialog({ item, onClose, onChanged }: { item: DriveItem
 	const { t } = useLanguage();
 	const [shares, setShares] = useState<DriveShareDto[]>([]);
 	const [linkToken, setLinkToken] = useState<string | null>(null);
+	const [linkRole, setLinkRole] = useState<DriveShareRole>("view");
 	const [email, setEmail] = useState("");
 	const [role, setRole] = useState<DriveShareRole>("view");
 	const [notify, setNotify] = useState(true);
@@ -30,7 +32,7 @@ export function DriveShareDialog({ item, onClose, onChanged }: { item: DriveItem
 	const [loadedFor, setLoadedFor] = useState({ id, t });
 	if (loadedFor.id !== id || loadedFor.t !== t) {
 		setLoadedFor({ id, t });
-		setShares([]); setLinkToken(null); setEmail(""); setMessage("");
+		setShares([]); setLinkToken(null); setLinkRole("view"); setEmail(""); setMessage("");
 	}
 
 	useEffect(() => {
@@ -42,10 +44,11 @@ export function DriveShareDialog({ item, onClose, onChanged }: { item: DriveItem
 				if (active) toast.error(t("drive.shareFailed"));
 				return;
 			}
-			const data = await response.json() as { shares: DriveShareDto[]; linkToken: string | null };
+			const data = await response.json() as { shares: DriveShareDto[]; linkToken: string | null; linkRole?: DriveShareRole };
 			if (!active) return;
 			setShares(data.shares);
 			setLinkToken(data.linkToken);
+			setLinkRole(data.linkRole === "edit" ? "edit" : "view");
 		}).catch(() => {
 			if (active) toast.error(t("drive.shareFailed"));
 		});
@@ -56,7 +59,7 @@ export function DriveShareDialog({ item, onClose, onChanged }: { item: DriveItem
 		setBusy(true);
 		try {
 			const response = await authFetch(input, init);
-			const data = await response.json().catch(() => ({})) as { shares?: DriveShareDto[]; linkToken?: string | null; notified?: boolean; error?: string };
+			const data = await response.json().catch(() => ({})) as { shares?: DriveShareDto[]; linkToken?: string | null; linkRole?: DriveShareRole; notified?: boolean; error?: string };
 			if (!response.ok) { toast.error(data.error ?? t("drive.shareFailed")); return null; }
 			onChanged();
 			return data;
@@ -86,13 +89,22 @@ export function DriveShareDialog({ item, onClose, onChanged }: { item: DriveItem
 		if (data?.shares) setShares(data.shares);
 	}
 
-	async function toggleLink() {
+	/** General access: restricted, or anyone with the link as viewer or editor. */
+	async function setGeneralAccess(enabled: boolean, nextRole: DriveShareRole = linkRole) {
 		if (!item) return;
-		const data = await request(`/api/drive/items/${item.id}/link`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ enabled: !linkToken }) });
-		if (data) setLinkToken(data.linkToken ?? null);
+		const data = await request(`/api/drive/items/${item.id}/link`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ enabled, role: nextRole }) });
+		if (data) {
+			setLinkToken(data.linkToken ?? null);
+			setLinkRole(data.linkRole === "edit" ? "edit" : "view");
+			if (enabled && !linkToken && data.linkToken) {
+				void navigator.clipboard?.writeText(`${window.location.origin}/d/${data.linkToken}`).then(() => toast.success(t("drive.linkCopied"))).catch(() => undefined);
+			}
+		}
 	}
 
 	const linkUrl = linkToken ? `${window.location.origin}/d/${linkToken}` : "";
+	// Editing through a link works for Docs, Sheets and Slides (also inside a shared folder); other files are view only.
+	const linkCanEdit = item?.kind === "folder" || !!(item && officeKindFromContentType(item.contentType));
 
 	return (
 		<Dialog open={!!item} onOpenChange={(open) => { if (!open) onClose(); }}>
@@ -129,10 +141,25 @@ export function DriveShareDialog({ item, onClose, onChanged }: { item: DriveItem
 					</ul>
 				)}
 				<h3 className="mb-2 mt-6 text-sm font-medium text-neutral-900">{t("drive.generalAccess")}</h3>
-				<div className="flex items-center gap-3 rounded-lg border border-neutral-200 p-3 text-sm">
-					<Link2 size={18} className="shrink-0 text-neutral-500" />
-					<span className="min-w-0 flex-1 text-neutral-700">{linkToken ? t("drive.linkOn") : t("drive.linkOff")}</span>
-					<Button type="button" variant="outline" size="sm" disabled={busy} onClick={() => void toggleLink()}>{linkToken ? t("drive.linkDisable") : t("drive.linkEnable")}</Button>
+				<div className="flex items-start gap-3 rounded-lg border border-neutral-200 p-3 text-sm" data-testid="general-access">
+					<span className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${linkToken ? "bg-green-100 text-green-800" : "bg-neutral-100 text-neutral-600"}`}>
+						{linkToken ? <Globe2 size={18} /> : <LockKeyhole size={18} />}
+					</span>
+					<div className="min-w-0 flex-1">
+						<Select value={linkToken ? "link" : "restricted"} disabled={busy} onChange={(event) => void setGeneralAccess(event.target.value === "link")} className="h-8 w-auto border-0 bg-transparent px-0 font-medium text-neutral-900" aria-label={t("drive.generalAccess")}>
+							<option value="restricted">{t("share.accessRestricted")}</option>
+							<option value="link">{t("share.accessAnyone")}</option>
+						</Select>
+						<p className="text-xs text-neutral-500">
+							{!linkToken ? t("share.accessRestrictedHint") : linkRole === "edit" ? t("share.accessAnyoneEditHint") : t("share.accessAnyoneViewHint")}
+						</p>
+					</div>
+					{linkToken && (
+						<Select value={linkRole} disabled={busy} onChange={(event) => void setGeneralAccess(true, event.target.value as DriveShareRole)} className="h-8 w-auto shrink-0 text-xs" aria-label={t("share.linkRole")}>
+							<option value="view">{t("share.roleViewer")}</option>
+							{linkCanEdit && <option value="edit">{t("share.roleEditor")}</option>}
+						</Select>
+					)}
 				</div>
 				{linkToken && (
 					<div className="mt-2 flex gap-2">

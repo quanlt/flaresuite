@@ -78,6 +78,7 @@ export async function toDriveItemDtos(db: Db, rows: DriveRow[], userId: string, 
 		role: roleFor ? roleFor(row) : row.ownerId === userId ? "owner" : "view",
 		shared: sharedIds.has(row.id) || !!row.linkToken,
 		linkToken: row.ownerId === userId ? row.linkToken : null,
+		linkRole: row.ownerId === userId && row.linkRole === "edit" ? "edit" : "view",
 		trashedAt: row.trashedAt?.toISOString() ?? null,
 		updatedAt: row.updatedAt.toISOString(),
 	}));

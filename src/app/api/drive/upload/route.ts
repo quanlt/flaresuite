@@ -58,7 +58,7 @@ export async function POST(request: Request) {
 	const key = driveObjectKey(ownerId, id);
 	const contentType = typeof body.contentType === "string" && body.contentType ? body.contentType.slice(0, 255) : "application/octet-stream";
 	const now = new Date();
-	const row: typeof driveItems.$inferSelect = { id, ownerId, parentId, kind: "file", name, r2Key: key, size, contentType, uploadId: null, uploadPartSize: null, uploadFingerprint: null, linkToken: null, trashedAt: null, createdAt: now, updatedAt: now };
+	const row: typeof driveItems.$inferSelect = { id, ownerId, parentId, kind: "file", name, r2Key: key, size, contentType, uploadId: null, uploadPartSize: null, uploadFingerprint: null, linkToken: null, linkRole: "view", trashedAt: null, createdAt: now, updatedAt: now };
 	const role = ownerId === user.id ? "owner" : "edit";
 
 	// Multipart uploads need at least one part, so an empty file is simply stored.

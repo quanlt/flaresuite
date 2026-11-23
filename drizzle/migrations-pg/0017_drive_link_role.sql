@@ -1,0 +1,1 @@
+ALTER TABLE "drive_items" ADD COLUMN "link_role" text DEFAULT 'view' NOT NULL;

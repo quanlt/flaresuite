@@ -80,7 +80,7 @@ export async function createOfficeItem<K extends OfficeKind>(
 	const row: DriveRow = {
 		id, ownerId, parentId, kind: "file", name, r2Key: driveObjectKey(ownerId, id), size: 0,
 		contentType: OFFICE_CONTENT_TYPES[input.kind], uploadId: null, uploadPartSize: null, uploadFingerprint: null,
-		linkToken: null, trashedAt: null, createdAt: now, updatedAt: now,
+		linkToken: null, linkRole: "view", trashedAt: null, createdAt: now, updatedAt: now,
 	};
 	await db.insert(driveItems).values(row);
 	try {

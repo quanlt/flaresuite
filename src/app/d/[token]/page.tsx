@@ -34,9 +34,9 @@ export default function PublicDrivePage({ params }: { params: Promise<{ token: s
 	if (!data) return <main className="safe-area min-h-dvh bg-[#f6f8fc]" aria-busy="true" />;
 	const { item, items, path } = data;
 	const isFile = item.kind === "file";
-	// Docs, Sheets and Slides open read-only in their own viewer instead of a file preview.
+	// Docs, Sheets and Slides open in their own editor (read-only unless the link allows editing).
 	const office = isFile ? officeKindFromContentType(item.contentType) : null;
-	if (office) return <OfficePublicViewer kind={office} name={item.name} contentUrl={publicContentUrl(token, item.id)} />;
+	if (office) return <OfficePublicViewer kind={office} token={token} itemId={item.id} />;
 
 	return (
 		<main className="mx-auto flex min-h-dvh max-w-5xl flex-col bg-[#f6f8fc] p-4 md:p-8 pt-[max(1rem,env(safe-area-inset-top))] pr-[max(1rem,env(safe-area-inset-right))] pb-[max(1rem,env(safe-area-inset-bottom))] pl-[max(1rem,env(safe-area-inset-left))] md:pt-[max(2rem,env(safe-area-inset-top))] md:pr-[max(2rem,env(safe-area-inset-right))] md:pb-[max(2rem,env(safe-area-inset-bottom))] md:pl-[max(2rem,env(safe-area-inset-left))]">

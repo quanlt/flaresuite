@@ -53,7 +53,7 @@ export async function listDriveAttachments(db: Db, user: Parameters<typeof listA
 			ownerHasAvatar: false,
 			role: "view" as const,
 			shared: false,
-			linkToken: null,
+			linkToken: null, linkRole: "view",
 			trashedAt: row.attachment.trashedAt?.toISOString() ?? null,
 			updatedAt: row.date.toISOString(),
 			source: { messageId: row.messageId, subject: row.subject ?? "", direction: row.direction, canDelete: !row.mailboxId || hasMailboxPermission(permissions.get(row.mailboxId) ?? "read_only", "send_on_behalf") },

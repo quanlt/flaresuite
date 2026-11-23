@@ -21,6 +21,6 @@ export async function GET(request: Request, { params }: DriveItemParams) {
 	const result = row ? await getAttachmentForUser(env, user, row.messageId, id) : null;
 	if (!result) return new Response("Not found", { status: 404 });
 	const { attachment } = result;
-	const file: DriveRow = { id: attachment.id, ownerId: row.messageId, parentId: null, kind: "file", name: attachment.filename, r2Key: attachment.r2Key, size: attachment.size, contentType: attachment.contentType, uploadId: null, uploadPartSize: null, uploadFingerprint: null, linkToken: null, trashedAt: null, createdAt: attachment.createdAt, updatedAt: attachment.createdAt };
+	const file: DriveRow = { id: attachment.id, ownerId: row.messageId, parentId: null, kind: "file", name: attachment.filename, r2Key: attachment.r2Key, size: attachment.size, contentType: attachment.contentType, uploadId: null, uploadPartSize: null, uploadFingerprint: null, linkToken: null, linkRole: "view", trashedAt: null, createdAt: attachment.createdAt, updatedAt: attachment.createdAt };
 	return streamDriveFile(env, request, file, new URL(request.url).searchParams.get("download") === "1");
 }

@@ -17,6 +17,8 @@ export type DriveItemDto = {
 	role: DriveRole;
 	shared: boolean;
 	linkToken: string | null;
+	/** What anyone with the link may do (owner only; "view" when there is no link). */
+	linkRole: DriveShareRole;
 	trashedAt: string | null;
 	updatedAt: string;
 	/** Set for files that come from an email rather than from Drive. */

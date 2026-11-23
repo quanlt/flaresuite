@@ -1,0 +1,1 @@
+ALTER TABLE `drive_items` ADD `link_role` varchar(64) DEFAULT 'view' NOT NULL;

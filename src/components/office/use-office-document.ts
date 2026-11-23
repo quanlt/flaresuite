@@ -17,7 +17,18 @@ const POLL_MS = 10_000;
  * people while nothing is pending locally. A save that races another person's save comes back as a conflict;
  * the caller then offers to reload or to overwrite.
  */
-export function useOfficeDocument<K extends OfficeKind>(id: string) {
+export function useOfficeDocument<K extends OfficeKind>(id: string, link?: { token: string }) {
+	// Signed-in people use the office API; "anyone with the link" visitors the link's public API.
+	const linkToken = link?.token ?? null;
+	const documentUrl = linkToken
+		? `/api/drive/public/${encodeURIComponent(linkToken)}/office?item=${encodeURIComponent(id)}`
+		: `/api/office/${encodeURIComponent(id)}`;
+	const metaUrl = `${documentUrl}${linkToken ? "&" : "?"}meta=1`;
+	const request = useCallback((url: string, init: RequestInit & { redirectOnUnauthorized?: boolean } = {}) => {
+		if (!linkToken) return authFetch(url, init);
+		const { redirectOnUnauthorized: _ignored, ...plain } = init;
+		return fetch(url, plain);
+	}, [linkToken]);
 	const [state, setState] = useState<OfficeDocumentState<K>>({ status: "loading" });
 	const [saveState, setSaveState] = useState<OfficeSaveState>("saved");
 	const [saveError, setSaveError] = useState<string | null>(null);
@@ -55,12 +66,12 @@ export function useOfficeDocument<K extends OfficeKind>(id: string) {
 	}, []);
 
 	const fetchDocument = useCallback(async (): Promise<OfficeDocumentResponse<K> | "missing"> => {
-		const response = await authFetch(`/api/office/${encodeURIComponent(id)}`, { cache: "no-store" });
+		const response = await request(documentUrl, { cache: "no-store" });
 		if (response.status === 404) return "missing";
 		const data = await response.json().catch(() => ({})) as OfficeDocumentResponse<K> & { error?: string };
 		if (!response.ok) throw new Error(data.error || "load");
 		return data;
-	}, [id]);
+	}, [request, documentUrl]);
 
 	const load = useCallback(() => fetchDocument()
 		.then((data) => {
@@ -78,7 +89,7 @@ export function useOfficeDocument<K extends OfficeKind>(id: string) {
 		dirtyRef.current = false;
 		setSaveState("saving");
 		try {
-			const response = await authFetch(`/api/office/${encodeURIComponent(id)}`, {
+			const response = await request(documentUrl, {
 				method: "PUT",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({ content, baseRevision: revisionRef.current }),
@@ -112,7 +123,7 @@ export function useOfficeDocument<K extends OfficeKind>(id: string) {
 			dirtyRef.current = true;
 			setSaveState("error");
 		}
-	}, [id]);
+	}, [request, documentUrl]);
 
 	const save = useCallback(async () => {
 		if (timerRef.current) { clearTimeout(timerRef.current); timerRef.current = null; }
@@ -166,7 +177,7 @@ export function useOfficeDocument<K extends OfficeKind>(id: string) {
 		const timer = setInterval(async () => {
 			if (document.hidden || savingRef.current) return;
 			try {
-				const response = await authFetch(`/api/office/${encodeURIComponent(id)}?meta=1`, { cache: "no-store", redirectOnUnauthorized: false });
+				const response = await request(metaUrl, { cache: "no-store", redirectOnUnauthorized: false });
 				if (response.status === 404) { setState({ status: "missing" }); return; }
 				if (!response.ok) return;
 				const meta = await response.json() as { updatedAt: string; role: DriveRole };
@@ -192,7 +203,7 @@ export function useOfficeDocument<K extends OfficeKind>(id: string) {
 			} catch { /* offline: try again next tick */ }
 		}, POLL_MS);
 		return () => clearInterval(timer);
-	}, [state.status, id, fetchDocument, applyLoaded]);
+	}, [state.status, request, metaUrl, fetchDocument, applyLoaded]);
 
 	// Flush on tab hide and warn before leaving with unsaved changes.
 	useEffect(() => {
@@ -214,13 +225,14 @@ export function useOfficeDocument<K extends OfficeKind>(id: string) {
 
 	/** Renames the file through Drive. */
 	const rename = useCallback(async (name: string): Promise<boolean> => {
+		if (linkToken) return false;
 		const response = await authFetch(`/api/drive/items/${encodeURIComponent(id)}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name }) });
 		if (!response.ok) return false;
 		const data = await response.json() as { item: DriveItemDto };
 		updatedAtRef.current = data.item.updatedAt;
 		setState((current) => (current.status === "ready" ? { ...current, item: { ...current.item, name: data.item.name, updatedAt: data.item.updatedAt } } : current));
 		return true;
-	}, [id]);
+	}, [id, linkToken]);
 
 	/** Re-reads sharing details (e.g. after the share dialog changed them) without touching the content. */
 	const refreshItem = useCallback(async () => {

@@ -29,7 +29,7 @@ async function listShares(db: Parameters<typeof getDriveItem>[0], itemId: string
 export async function GET(request: Request, { params }: DriveItemParams) {
 	const ctx = await loadOwnedItem(request, params, false);
 	if (ctx.error) return ctx.error;
-	return NextResponse.json({ shares: await listShares(ctx.db, ctx.item.id), linkToken: ctx.item.linkToken });
+	return NextResponse.json({ shares: await listShares(ctx.db, ctx.item.id), linkToken: ctx.item.linkToken, linkRole: ctx.item.linkRole === "edit" ? "edit" : "view" });
 }
 
 export async function POST(request: Request, { params }: DriveItemParams) {

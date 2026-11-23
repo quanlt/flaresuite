@@ -2887,5 +2887,16 @@
 	"sheets.templateInvoice": "Hóa đơn",
 	"sheets.exportCsv": "Giá trị phân tách bằng dấu phẩy (.csv, trang hiện tại)",
 	"sheets.exportTsv": "Giá trị phân tách bằng tab (.tsv, trang hiện tại)",
-	"sheets.exportExcel": "Microsoft Excel (.xls)"
+	"sheets.exportExcel": "Microsoft Excel (.xls)",
+	"office.linkCanEdit": "Bất kỳ ai có đường liên kết đều có thể chỉnh sửa",
+	"office.linkCanView": "Chỉ xem",
+	"office.accessLinkEdit": "Bất kỳ ai có đường liên kết đều có thể chỉnh sửa",
+	"share.accessRestricted": "Bị hạn chế",
+	"share.accessAnyone": "Bất kỳ ai có đường liên kết",
+	"share.accessRestrictedHint": "Chỉ những người có quyền truy cập mới mở được bằng đường liên kết",
+	"share.accessAnyoneViewHint": "Bất kỳ ai trên Internet có đường liên kết đều có thể xem",
+	"share.accessAnyoneEditHint": "Bất kỳ ai trên Internet có đường liên kết đều có thể chỉnh sửa, không cần đăng nhập",
+	"share.linkRole": "Quyền của đường liên kết",
+	"share.roleViewer": "Người xem",
+	"share.roleEditor": "Người chỉnh sửa"
 }

@@ -24,7 +24,7 @@ import { OfficeMenuButton, useRegisteredOfficeMenus } from "./office-menus";
 
 const menuItemClass = "flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-sm text-neutral-700 outline-none data-[highlighted]:bg-neutral-100 data-[disabled]:cursor-default data-[disabled]:opacity-50";
 
-function SaveStatus({ state, onRetry }: { state: OfficeSaveState; onRetry: () => void }) {
+export function SaveStatus({ state, onRetry }: { state: OfficeSaveState; onRetry: () => void }) {
 	const { t } = useLanguage();
 	if (state === "readonly") return null;
 	if (state === "error") return <button type="button" onClick={onRetry} className="text-xs text-red-600 hover:underline">{t("office.saveFailedRetry")}</button>;
@@ -42,7 +42,7 @@ function AccessBadge({ role, item }: { role: DriveRole; item: DriveItemDto }) {
 	const { t } = useLanguage();
 	if (role === "owner") {
 		const Icon = item.linkToken ? Globe2 : item.shared ? Users : LockKeyhole;
-		const label = item.linkToken ? t("office.accessLink") : item.shared ? t("office.accessShared") : t("office.accessPrivate");
+		const label = item.linkToken ? (item.linkRole === "edit" ? t("office.accessLinkEdit") : t("office.accessLink")) : item.shared ? t("office.accessShared") : t("office.accessPrivate");
 		return <Tooltip label={label}><span className="flex h-7 w-7 items-center justify-center rounded-full text-neutral-500"><Icon size={15} aria-label={label} /></span></Tooltip>;
 	}
 	return (

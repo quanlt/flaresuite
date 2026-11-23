@@ -96,7 +96,7 @@ export async function POST(request: Request) {
 		ownerId = parent.ownerId;
 	}
 	const now = new Date();
-	const row = { id: newId("drv"), ownerId, parentId, kind: "folder" as const, name, r2Key: null, size: 0, contentType: "application/x-directory", uploadId: null, uploadPartSize: null, uploadFingerprint: null, linkToken: null, trashedAt: null, createdAt: now, updatedAt: now };
+	const row = { id: newId("drv"), ownerId, parentId, kind: "folder" as const, name, r2Key: null, size: 0, contentType: "application/x-directory", uploadId: null, uploadPartSize: null, uploadFingerprint: null, linkToken: null, linkRole: "view" as const, trashedAt: null, createdAt: now, updatedAt: now };
 	await db.insert(driveItems).values(row);
 	const [item] = await toDriveItemDtos(db, [row], user.id, () => (ownerId === user.id ? "owner" : "edit"));
 	return NextResponse.json({ item });

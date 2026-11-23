@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server";
 import { authorizeDrive } from "@/lib/drive/auth";
-import { getDriveItem, toDriveItemDtos } from "@/lib/drive/access";
+import { toDriveItemDtos } from "@/lib/drive/access";
 import { canEditDrive } from "@/lib/drive/utils";
 import { readJsonBody } from "@/lib/http/request";
 import { RequestBodyTooLargeError } from "@/lib/http/errors";
-import { getOfficeItem, OfficeError, readOfficeEnvelope, writeOfficeEnvelope } from "@/lib/office/service";
-import { createEnvelope, OFFICE_MAX_REQUEST_BYTES, validateOfficeContent } from "@/lib/office/utils";
-import type { OfficeContentMap, OfficeDocumentResponse, OfficeSaveResponse } from "@/lib/office/types";
+import { getOfficeItem, OfficeError, readOfficeEnvelope } from "@/lib/office/service";
+import { saveOfficeDocument } from "@/lib/office/save";
+import { OFFICE_MAX_REQUEST_BYTES } from "@/lib/office/utils";
+import type { OfficeDocumentResponse } from "@/lib/office/types";
 import type { OfficeItemParams } from "../types";
 
 const notFound = () => NextResponse.json({ error: "Not found" }, { status: 404 });
@@ -58,22 +59,6 @@ export async function PUT(request: Request, { params }: OfficeItemParams) {
 		if (error instanceof RequestBodyTooLargeError) return NextResponse.json({ error: "This file is too large to save", code: "TOO_LARGE" }, { status: 413 });
 		return NextResponse.json({ error: "Invalid request" }, { status: 400 });
 	}
-	const invalid = validateOfficeContent(found.kind, body.content);
-	if (invalid) return NextResponse.json({ error: invalid }, { status: 400 });
-	if (typeof body.baseRevision !== "number") return NextResponse.json({ error: "Missing baseRevision" }, { status: 400 });
-
-	try {
-		const current = await readOfficeEnvelope(env, found.item, found.kind);
-		if (body.baseRevision !== current.revision) {
-			return NextResponse.json({ error: "Someone else changed this file", code: "CONFLICT", revision: current.revision }, { status: 409 });
-		}
-		// Re-read the row: the size the quota check subtracts must be the stored one, not a stale copy.
-		const fresh = await getDriveItem(db, found.item.id) ?? found.item;
-		const revision = current.revision + 1;
-		const { size, updatedAt } = await writeOfficeEnvelope(env, db, fresh, createEnvelope(found.kind, body.content as OfficeContentMap[typeof found.kind], revision));
-		const response: OfficeSaveResponse = { revision, updatedAt: updatedAt.toISOString(), size };
-		return NextResponse.json(response);
-	} catch (error) {
-		return officeErrorResponse(error);
-	}
+	const result = await saveOfficeDocument(env, db, found.item, found.kind, body);
+	return NextResponse.json(result.body, { status: result.status });
 }

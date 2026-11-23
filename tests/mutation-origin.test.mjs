@@ -104,6 +104,7 @@ const EXEMPT = {
 	"auth/passkey/verify/route.ts": "pre-session passkey sign-in",
 	"auth/passkey/setup/options/route.ts": "pre-session, proves a single-use enrolment grant",
 	"auth/passkey/setup/verify/route.ts": "pre-session, proves a single-use enrolment grant",
+	"drive/public/[token]/office/route.ts": "anyone-with-the-link editing, authorized by the unguessable link token in the URL, no cookie or session involved",
 	"setup/bootstrap/route.ts": "FlareSuite Cloud control plane, server to server with the workspace SETUP_TOKEN header, no cookie",
 	"setup/domain/route.ts": "first-run setup, only works before any account exists",
 	"setup/domain/mx/route.ts": "first-run setup, only works before any account exists",

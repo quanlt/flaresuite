@@ -80,7 +80,7 @@ export async function POST(request: Request, { params }: SaveToDriveRouteParams)
 		uploadId: null,
 		uploadPartSize: null,
 		uploadFingerprint: null,
-		linkToken: null,
+		linkToken: null, linkRole: "view",
 		trashedAt: null,
 		createdAt: now,
 		updatedAt: now,

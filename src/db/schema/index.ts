@@ -1386,6 +1386,8 @@ export const driveItems = sqliteTable("drive_items", {
 	uploadPartSize: integer("upload_part_size"),
 	uploadFingerprint: text("upload_fingerprint"),
 	linkToken: text("link_token"),
+	// What "anyone with the link" may do: view, or edit Docs, Sheets and Slides without signing in.
+	linkRole: text("link_role", { enum: ["view", "edit"] }).notNull().default("view"),
 	trashedAt: timestamp("trashed_at"),
 	createdAt: timestamp("created_at").notNull().$defaultFn(() => new Date()),
 	updatedAt: timestamp("updated_at").notNull().$defaultFn(() => new Date()),

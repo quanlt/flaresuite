@@ -2905,5 +2905,16 @@
 	"sheets.templateInvoice": "Invoice",
 	"sheets.exportCsv": "Comma-separated values (.csv, current sheet)",
 	"sheets.exportTsv": "Tab-separated values (.tsv, current sheet)",
-	"sheets.exportExcel": "Microsoft Excel (.xls)"
+	"sheets.exportExcel": "Microsoft Excel (.xls)",
+	"office.linkCanEdit": "Anyone with the link can edit",
+	"office.linkCanView": "View only",
+	"office.accessLinkEdit": "Anyone with the link can edit",
+	"share.accessRestricted": "Restricted",
+	"share.accessAnyone": "Anyone with the link",
+	"share.accessRestrictedHint": "Only people with access can open with the link",
+	"share.accessAnyoneViewHint": "Anyone on the internet with the link can view",
+	"share.accessAnyoneEditHint": "Anyone on the internet with the link can edit, without signing in",
+	"share.linkRole": "Link permission",
+	"share.roleViewer": "Viewer",
+	"share.roleEditor": "Editor"
 }
