@@ -151,6 +151,15 @@ test("omitted settings preserve API compatibility; opting in includes future dom
 	assert.equal(address.mailbox.localPart, "jane");
 });
 
+test("a display name given at creation names the account and its mailbox; the username otherwise", async (t) => {
+	const f = await fixture(t);
+	assert.equal((await f.post("dashboard", { name: "  Sam Rivera ", useAllDomains: false })).status, 201);
+	assert.equal(f.database.db.prepare("SELECT name FROM users WHERE email = 'sam@one.test'").get().name, "Sam Rivera");
+	assert.equal(f.database.db.prepare("SELECT display_name FROM mailboxes WHERE local_part = 'sam'").get().display_name, "Sam Rivera");
+	assert.equal((await f.post("dashboard", { username: "jo", useAllDomains: false })).status, 201);
+	assert.equal(f.database.db.prepare("SELECT name FROM users WHERE email = 'jo@one.test'").get().name, "jo");
+});
+
 test("admin MCP forwards alias selection to the same account creation handler", async (t) => {
 	const f = await fixture(t);
 	const handlers = new Map();

@@ -62,12 +62,13 @@ export async function createAccountResponse(env: CloudflareEnv, actor: AccountAd
 
 	const userId = newId("usr");
 	const mailboxId = newId("mbx");
-	const mailbox = { id: mailboxId, userId, domainId: primaryDomain.id, localPart: username, displayName: username, useAllDomains: input.useAllDomains };
+	const name = input.name?.trim() || username;
+	const mailbox = { id: mailboxId, userId, domainId: primaryDomain.id, localPart: username, displayName: name, useAllDomains: input.useAllDomains };
 	const changes: CfEmailRoutingRuleChange[] = [];
 	let inserted = false;
 	try {
 		const accountInsert = db.insert(users).values({
-			id: userId, email, passwordHash: hashPassword(input.password), name: username,
+			id: userId, email, passwordHash: hashPassword(input.password), name,
 			role: input.role, createdByUserId: adminUserId, remoteContentMode: "ask",
 		}).returning();
 		const mailboxInsert = db.insert(mailboxes).values(mailbox);

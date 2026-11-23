@@ -28,6 +28,7 @@ import type { CurrentAccountResponse, Domain, MailboxOwner, MailboxesResponse } 
 import { formatAccountDateTime } from "../accounts/utils";
 import { getMailboxAddress, getMailboxesBase, getMailboxName } from "./utils";
 
+const NEW_PERSON = "__new_person__";
 const COLUMNS = "grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-4 md:grid-cols-[auto_minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)]";
 const STATUS_STYLES = {
 	active: "bg-green-600/10 text-green-800",
@@ -45,6 +46,7 @@ export default function MailboxesPage() {
 	const [domainId, setDomainId] = useState("");
 	const [ownerUserId, setOwnerUserId] = useState("");
 	const [mailboxType, setMailboxType] = useState<"personal" | "shared">("personal");
+	const [password, setPassword] = useState("");
 	const [createOpen, setCreateOpen] = useState(false);
 
 	const account = useQuery({
@@ -93,8 +95,26 @@ export default function MailboxesPage() {
 		},
 	});
 
+	// "New person": an account with its own sign-in, created with this address as its login (POST /api/accounts).
+	const newPerson = mailboxType === "personal" && ownerUserId === NEW_PERSON;
 	const create = useMutation({
 		mutationFn: async () => {
+			if (newPerson) {
+				const res = await authFetch("/api/accounts", {
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({ username: localPart, domainId, password, name: displayName.trim(), role: "user", useAllDomains: false, aliases: [] }),
+				});
+				const json = (await res.json()) as { account?: { mailboxId?: string | null }; error?: unknown };
+				if (!res.ok) throw new Error(typeof json.error === "string" ? json.error : t("mailboxes.failed"));
+				setDisplayName("");
+				setLocalPart("");
+				setDomainId("");
+				setOwnerUserId("");
+				setPassword("");
+				qc.invalidateQueries({ queryKey: ["accounts"] });
+				return undefined;
+			}
 			const res = await authFetch("/api/mailboxes", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
@@ -147,7 +167,7 @@ export default function MailboxesPage() {
 							{t("mailboxes.new")}
 						</Button>
 					</DialogTrigger>
-					<DialogContent>
+					<DialogContent className="max-h-[calc(100vh-4rem)] overflow-y-auto">
 						<DialogHeader>
 							<DialogTitle>{t("mailboxes.createTitle")}</DialogTitle>
 							<DialogDescription>{t("mailboxes.createDescription")}</DialogDescription>
@@ -178,6 +198,7 @@ export default function MailboxesPage() {
 										const owner = mailboxOwners.find((item) => item.id === event.target.value);
 										setOwnerUserId(event.target.value);
 										if (owner) setDisplayName(owner.name);
+										else if (event.target.value === NEW_PERSON) setDisplayName("");
 									}}
 									containerClassName="flex w-full rounded-none border-0 p-0"
 										className="h-10 rounded-md border border-neutral-200 bg-white px-3 text-sm shadow-sm shadow-neutral-200/50 focus-visible:border-blue-600"
@@ -187,7 +208,11 @@ export default function MailboxesPage() {
 											{owner.name} ({owner.email})
 										</option>
 									))}
+									<option value={NEW_PERSON}>{t("mailboxes.newPerson")}</option>
 								</Select>
+								<p className="text-xs text-neutral-500" data-testid="mailbox-owner-hint">
+									{newPerson ? t("mailboxes.newPersonHint") : t("mailboxes.personalHint")}
+								</p>
 							</div>
 							) : (
 								<p className="rounded-2xl bg-blue-50 px-4 py-3 text-sm text-blue-800">
@@ -230,12 +255,19 @@ export default function MailboxesPage() {
 									</Select>
 								</div>
 							</div>
+							{newPerson && (
+								<div className="space-y-2">
+									<Label htmlFor="mailbox-password">{t("auth.password")}</Label>
+									<Input id="mailbox-password" type="password" minLength={8} autoComplete="new-password" value={password} onChange={(event) => setPassword(event.target.value)} />
+									<p className="text-xs text-neutral-500">{t("mailboxes.passwordHint")}</p>
+								</div>
+							)}
 							{create.isError && (
 								<p role="alert" className="text-sm text-red-600">{(create.error as Error).message}</p>
 							)}
 							<Button
 								onClick={() => create.mutate()}
-								disabled={(mailboxType === "personal" && !ownerUserId) || !displayName.trim() || !domainId || !localPart || create.isPending}
+								disabled={(mailboxType === "personal" && !ownerUserId) || (newPerson && password.length < 8) || !displayName.trim() || !domainId || !localPart || create.isPending}
 							>
 								{create.isPending ? t("accounts.creating") : t("mailboxes.createButton")}
 							</Button>
