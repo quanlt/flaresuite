@@ -1,6 +1,6 @@
 import type { ReactNode, SVGProps } from "react";
 
-type IconProps = SVGProps<SVGSVGElement> & { size?: number };
+type IconProps = Omit<SVGProps<SVGSVGElement>, "ref"> & { size?: number | string };
 
 /** Small stroke icons the shared icon set does not have, drawn in the same 24px style. */
 function make(paths: ReactNode, displayName: string) {
@@ -29,3 +29,11 @@ export const FillIcon = make(<><path d="M5 11l7-7 7 7-7 7z" /><path d="M20 15s2 
 export const BorderIcon = make(<rect x="4" y="4" width="16" height="16" rx="1" strokeDasharray="3 2" />, "BorderIcon");
 export const TextColorIcon = make(<><path d="M7 16l5-12 5 12M9 12h6" /><path d="M4 20h16" /></>, "TextColorIcon");
 export const BackgroundIcon = make(<><rect x="3" y="5" width="18" height="14" rx="2" /><path d="M3 15l5-5 4 4 3-3 6 6" /></>, "BackgroundIcon");
+export const TriangleIcon = make(<path d="M12 4l9 16H3z" />, "TriangleIcon");
+export const ArrowShapeIcon = make(<path d="M3 9h10V5l8 7-8 7v-4H3z" />, "ArrowShapeIcon");
+export const CursorIcon = make(<path d="M5 3l14 8-6 1.5L10 19z" />, "CursorIcon");
+export const GridIcon = make(<><rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /><rect x="14" y="14" width="7" height="7" rx="1" /></>, "GridIcon");
+export const FilmstripIcon = make(<><rect x="3" y="4" width="6" height="16" rx="1" /><rect x="12" y="4" width="9" height="16" rx="1" /></>, "FilmstripIcon");
+export const NotesIcon = make(<><rect x="3" y="3" width="18" height="18" rx="2" /><path d="M3 15h18M7 18h8" /></>, "NotesIcon");
+export const ZoomIcon = make(<><circle cx="11" cy="11" r="7" /><path d="M20 20l-4-4M8 11h6M11 8v6" /></>, "ZoomIcon");
+export const LayoutIcon = make(<><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M3 9h18M10 9v11" /></>, "LayoutIcon");

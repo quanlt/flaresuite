@@ -14,7 +14,10 @@ export type DocumentContent = {
 
 /* ---------- Sheets ---------- */
 
-export type CellNumberFormat = "general" | "number" | "percent" | "currency" | "date" | "text";
+export type CellNumberFormat = "general" | "number" | "percent" | "currency" | "date" | "time" | "text";
+
+/** A border line drawn on one side of a cell. */
+export type CellBorder = { color?: string; style?: "solid" | "dashed" | "dotted" | "thick" };
 
 export type CellStyle = {
 	bold?: boolean;
@@ -24,14 +27,27 @@ export type CellStyle = {
 	color?: string;
 	fill?: string;
 	align?: "left" | "center" | "right";
+	/** Vertical alignment; absent means middle. */
+	valign?: "top" | "middle" | "bottom";
 	format?: CellNumberFormat;
 	/** Decimal places for number, percent and currency formats. */
 	decimals?: number;
 	wrap?: boolean;
+	/** Cuts text at the cell edge instead of letting it spill into empty neighbours. Ignored when `wrap` is set. */
+	clip?: boolean;
+	/** Font size in points; absent means 10. */
+	fontSize?: number;
+	fontFamily?: string;
+	borders?: { top?: CellBorder; right?: CellBorder; bottom?: CellBorder; left?: CellBorder };
+	/** Shows a checkbox: TRUE is checked, anything else unchecked. */
+	checkbox?: boolean;
 };
 
 /** One cell. `input` is what the user typed: a literal value or a formula starting with "=". */
-export type Cell = { input: string; style?: CellStyle };
+export type Cell = { input: string; style?: CellStyle; /** http(s) or mailto URL the cell links to. */ link?: string };
+
+/** A basic filter: the header row is the first row of `range`; `hidden` lists hidden values per column index. */
+export type SheetFilter = { range: string; hidden?: Record<string, string[]> };
 
 export type Sheet = {
 	id: string;
@@ -46,13 +62,18 @@ export type Sheet = {
 	rowHeights?: Record<string, number>;
 	frozenRows?: number;
 	frozenCols?: number;
+	/** Merged ranges such as "A1:B2"; the top-left cell holds the value. Ranges never overlap. */
+	merges?: string[];
+	hideGridlines?: boolean;
+	filter?: SheetFilter;
 };
 
 export type SpreadsheetContent = { sheets: Sheet[]; activeSheetId?: string };
 
 /* ---------- Slides ---------- */
 
-export type SlideElementType = "text" | "rect" | "ellipse" | "line" | "image";
+/** Triangle and arrow were added later: older readers render unknown types as nothing, never fail. */
+export type SlideElementType = "text" | "rect" | "ellipse" | "triangle" | "arrow" | "line" | "image";
 
 export type SlideElement = {
 	id: string;
@@ -76,6 +97,7 @@ export type SlideElement = {
 		fontFamily?: string;
 		bold?: boolean;
 		italic?: boolean;
+		underline?: boolean;
 		align?: "left" | "center" | "right";
 		verticalAlign?: "top" | "middle" | "bottom";
 		radius?: number;
@@ -87,7 +109,10 @@ export type Slide = {
 	id: string;
 	background?: string;
 	elements: SlideElement[];
+	/** Plain-text speaker notes. */
 	notes?: string;
+	/** Left out of the slideshow and the HTML export (still edited and printed). */
+	skipped?: boolean;
 };
 
 export type PresentationContent = {

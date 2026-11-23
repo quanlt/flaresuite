@@ -2,7 +2,8 @@ import type { SVGProps } from "react";
 
 /* Toolbar glyphs the shared icon set does not have, drawn in the same 24px stroke style. */
 
-type GlyphProps = SVGProps<SVGSVGElement> & { size?: number };
+// Same props as the shared icons, so a glyph can be a menu item icon.
+type GlyphProps = Omit<SVGProps<SVGSVGElement>, "ref"> & { size?: number | string };
 
 function Glyph({ size = 18, children, ...props }: GlyphProps) {
 	return (
@@ -25,6 +26,17 @@ export const UnlinkGlyph = (props: GlyphProps) => <Glyph {...props}><path d="M9 
 export const PageBreakGlyph = (props: GlyphProps) => <Glyph {...props}><path d="M6 3v5h12V3M6 21v-5h12v5M3 12h2M8 12h3M13 12h3M19 12h2" /></Glyph>;
 export const PrintGlyph = (props: GlyphProps) => <Glyph {...props}><path d="M7 8V3h10v5M7 17H5a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" /><rect x="7" y="14" width="10" height="7" rx="1" /></Glyph>;
 export const PageSetupGlyph = (props: GlyphProps) => <Glyph {...props}><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" /><path d="M14 3v5h5M9 13h6M9 17h4" /></Glyph>;
+
+export const SuperscriptGlyph = (props: GlyphProps) => <Glyph {...props}><path d="M4 8l8 10M12 8l-8 10" /><path d="M15.5 6.5a1.8 1.8 0 1 1 3.1 1.3L15.5 11h4" strokeWidth={1.4} /></Glyph>;
+export const SubscriptGlyph = (props: GlyphProps) => <Glyph {...props}><path d="M4 5l8 10M12 5L4 15" /><path d="M15.5 15.5a1.8 1.8 0 1 1 3.1 1.3L15.5 20h4" strokeWidth={1.4} /></Glyph>;
+export const LineSpacingGlyph = (props: GlyphProps) => <Glyph {...props}><path d="M11 6h9M11 12h9M11 18h9M5 4v16M3 6l2-2 2 2M3 18l2 2 2-2" /></Glyph>;
+export const CutGlyph = (props: GlyphProps) => <Glyph {...props}><circle cx="6" cy="18" r="2.5" /><circle cx="18" cy="18" r="2.5" /><path d="M7.8 16.2L17 4M16.2 16.2L7 4" /></Glyph>;
+export const PasteGlyph = (props: GlyphProps) => <Glyph {...props}><path d="M9 4H7a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-2" /><rect x="9" y="2.5" width="6" height="3.5" rx="1" /></Glyph>;
+export const SelectAllGlyph = (props: GlyphProps) => <Glyph {...props}><path d="M4 7V5a1 1 0 0 1 1-1h2M17 4h2a1 1 0 0 1 1 1v2M20 17v2a1 1 0 0 1-1 1h-2M7 20H5a1 1 0 0 1-1-1v-2M8 9h8M8 12h8M8 15h5" /></Glyph>;
+export const OutlineGlyph = (props: GlyphProps) => <Glyph {...props}><path d="M4 6h10M8 12h12M8 18h12M4 12h.01M4 18h.01" /></Glyph>;
+export const OmegaGlyph = (props: GlyphProps) => <Glyph {...props}><path d="M4 20h5v-2.5a6.5 6.5 0 1 1 6 0V20h5" /></Glyph>;
+export const ZoomGlyph = (props: GlyphProps) => <Glyph {...props}><circle cx="10.5" cy="10.5" r="6.5" /><path d="M20 20l-4.8-4.8M8 10.5h5M10.5 8v5" /></Glyph>;
+export const FontSizeUpGlyph = (props: GlyphProps) => <Glyph {...props}><path d="M12 5v14M5 12h14" /></Glyph>;
 
 /** "A" with a colour bar underneath, for text colour and highlight. */
 export function ColorGlyph({ color, highlight, size = 18 }: { color: string; highlight?: boolean; size?: number }) {

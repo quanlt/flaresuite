@@ -1,4 +1,5 @@
 import { officeLocalId, SLIDE_HEIGHT, SLIDE_WIDTH } from "@/lib/office/utils";
+import type { TranslationKey } from "@/lib/i18n/types";
 import type { PresentationContent, Slide, SlideElement, SlideElementType } from "@/lib/office/types";
 import type { AlignMode, Box, ResizeHandle, SlideLayoutId, SlideTheme, SlideThemeId, SnapGuide, SnapResult, ZOrderMove } from "./slides-types";
 
@@ -15,6 +16,74 @@ export const SLIDE_THEMES: Record<SlideThemeId, SlideTheme> = {
 };
 
 export const SLIDE_LAYOUTS: SlideLayoutId[] = ["title", "titleBody", "section", "twoColumns", "imageCaption", "blank"];
+
+export const LAYOUT_LABELS: Record<SlideLayoutId, TranslationKey> = {
+	title: "slides.layout.title",
+	titleBody: "slides.layout.titleBody",
+	section: "slides.layout.section",
+	twoColumns: "slides.layout.twoColumns",
+	imageCaption: "slides.layout.imageCaption",
+	blank: "slides.layout.blank",
+};
+
+export const THEME_LABELS: Record<SlideThemeId, TranslationKey> = { light: "slides.theme.light", dark: "slides.theme.dark", blue: "slides.theme.blue", warm: "slides.theme.warm" };
+
+export const FONT_SIZES = [10, 12, 14, 16, 18, 20, 24, 28, 32, 36, 40, 44, 48, 54, 60, 72, 96];
+export const STROKE_WIDTHS = [0, 1, 2, 3, 4, 6, 8, 12];
+
+/** Fonts every system has (or falls back gracefully from); labels are font names, not translated. */
+export const FONT_FAMILIES: { label: string; value: string }[] = [
+	{ label: "Inter", value: DEFAULT_FONT_FAMILY },
+	{ label: "Arial", value: "Arial, Helvetica, sans-serif" },
+	{ label: "Verdana", value: "Verdana, Geneva, sans-serif" },
+	{ label: "Trebuchet MS", value: "'Trebuchet MS', sans-serif" },
+	{ label: "Georgia", value: "Georgia, 'Times New Roman', serif" },
+	{ label: "Times New Roman", value: "'Times New Roman', Times, serif" },
+	{ label: "Courier New", value: "'Courier New', Courier, monospace" },
+];
+
+/** Zoom steps in percent; "fit" (the default) fills the space around the slide. */
+export const ZOOM_LEVELS = [50, 75, 100, 125, 150, 200];
+
+/** Element types that hold rich text (double-click to type). */
+export const TEXT_BODY_TYPES: SlideElementType[] = ["text", "rect", "ellipse", "triangle", "arrow"];
+
+export function hasTextBody(type: SlideElementType): boolean {
+	return TEXT_BODY_TYPES.includes(type);
+}
+
+/** Shapes drawn as an SVG polygon behind their text. */
+export function isPolygonShape(type: SlideElementType): type is "triangle" | "arrow" {
+	return type === "triangle" || type === "arrow";
+}
+
+/** Polygon points of a triangle or a right-pointing block arrow filling a w x h box. */
+export function shapePoints(type: "triangle" | "arrow", w: number, h: number): string {
+	const points: [number, number][] = type === "triangle"
+		? [[w / 2, 0], [w, h], [0, h]]
+		: (() => {
+			const head = round(w - Math.min(w * 0.5, h));
+			return [[0, h * 0.25], [head, h * 0.25], [head, 0], [w, h / 2], [head, h], [head, h * 0.75], [0, h * 0.75]];
+		})();
+	return points.map(([x, y]) => `${round(x)},${round(y)}`).join(" ");
+}
+
+/** A font-family value safe to put in CSS: names, quotes, commas and spaces only. */
+export function safeFontFamily(value: string | undefined, fallback: string): string {
+	return value && /^[\w\s,'"-]{1,120}$/.test(value) ? value : fallback;
+}
+
+/** Slides the slideshow shows, in order: every slide not skipped (or all of them when every slide is skipped). */
+export function presentableIndices(slides: Pick<Slide, "skipped">[]): number[] {
+	const shown = slides.flatMap((slide, index) => (slide.skipped ? [] : [index]));
+	return shown.length ? shown : slides.map((_, index) => index);
+}
+
+/** Where a slideshow started at `index` begins: that slide, or the next one shown (or the last one shown). */
+export function presentStart(slides: Pick<Slide, "skipped">[], index: number): number {
+	const shown = presentableIndices(slides);
+	return shown.find((entry) => entry >= index) ?? shown[shown.length - 1] ?? 0;
+}
 
 export function clamp(value: number, min: number, max: number): number {
 	return Math.min(max, Math.max(min, value));
@@ -190,13 +259,14 @@ function structuredCloneSafe<T>(value: T): T {
 
 /** A new element of a type, centred on the slide. */
 export function createElement(type: SlideElementType, theme: SlideTheme, extra: Partial<SlideElement> = {}): SlideElement {
-	const sizes: Record<SlideElementType, [number, number]> = { text: [400, 80], rect: [240, 160], ellipse: [200, 200], line: [300, 4], image: [400, 300] };
+	const sizes: Record<SlideElementType, [number, number]> = { text: [400, 80], rect: [240, 160], ellipse: [200, 200], triangle: [220, 190], arrow: [260, 140], line: [300, 4], image: [400, 300] };
 	const [w, h] = sizes[type];
 	const base: SlideElement = { id: officeLocalId("el"), type, x: round((SLIDE_WIDTH - w) / 2), y: round((SLIDE_HEIGHT - h) / 2), w, h };
 	if (type === "text") base.style = { fontSize: 24, align: "left", verticalAlign: "top" };
-	if (type === "rect" || type === "ellipse") base.style = { fill: theme.accent, color: "#ffffff", fontSize: 20, align: "center", verticalAlign: "middle" };
+	if (type !== "text" && hasTextBody(type)) base.style = { fill: theme.accent, color: "#ffffff", fontSize: 20, align: "center", verticalAlign: "middle" };
+	if (type === "triangle") base.style = { ...base.style, verticalAlign: "bottom" };
 	if (type === "line") base.style = { stroke: theme.color, strokeWidth: 3 };
-	if (type === "text" || type === "rect" || type === "ellipse") base.html = "";
+	if (hasTextBody(type)) base.html = "";
 	return { ...base, ...extra, style: { ...base.style, ...extra.style } };
 }
 
@@ -240,6 +310,28 @@ export function createSlide(layout: SlideLayoutId, theme: SlideTheme, fill: { ti
 		default:
 			return { id, elements: [] };
 	}
+}
+
+/**
+ * Re-lays out an existing slide: its text boxes move into the layout's placeholders in order (keeping their text,
+ * id and own colour or font), anything that is not a text box stays where it is, extra text boxes are kept, and
+ * the layout's decorations are added unless an identical one is already there.
+ */
+export function applyLayout(slide: Slide, layout: SlideLayoutId, theme: SlideTheme): Slide {
+	const template = createSlide(layout, theme);
+	const texts = slide.elements.filter((element) => element.type === "text");
+	const others = slide.elements.filter((element) => element.type !== "text");
+	const placeholders = template.elements.filter((element) => element.type === "text");
+	const same = (a: SlideElement, b: SlideElement) => a.type === b.type && a.x === b.x && a.y === b.y && a.w === b.w && a.h === b.h;
+	const decorations = template.elements.filter((element) => element.type !== "text" && !others.some((other) => same(other, element)));
+	const placed = placeholders.map((placeholder, position) => {
+		const old = texts[position];
+		if (!old) return placeholder;
+		const keep: Partial<NonNullable<SlideElement["style"]>> = {};
+		for (const key of ["color", "fontFamily", "italic", "underline"] as const) if (old.style?.[key] !== undefined) (keep as Record<string, unknown>)[key] = old.style[key];
+		return { ...placeholder, id: old.id, html: old.html, style: { ...placeholder.style, ...keep } };
+	});
+	return { ...slide, elements: [...decorations, ...others, ...placed, ...texts.slice(placeholders.length)] };
 }
 
 /** A softened variant of a text colour for subtitles. */
@@ -328,9 +420,10 @@ export function elementSurfaceStyle(element: SlideElement, theme: SlideTheme): R
 		justifyContent: style.verticalAlign === "middle" ? "center" : style.verticalAlign === "bottom" ? "flex-end" : "flex-start",
 		color: cssColor(style.color, theme.color),
 		fontSize: `${style.fontSize ?? 20}px`,
-		fontFamily: style.fontFamily ?? theme.fontFamily,
+		fontFamily: safeFontFamily(style.fontFamily, theme.fontFamily),
 		fontWeight: style.bold ? "700" : "400",
 		fontStyle: style.italic ? "italic" : "normal",
+		textDecoration: style.underline ? "underline" : "none",
 		textAlign: style.align ?? "left",
 		lineHeight: "1.25",
 		overflow: "hidden",
@@ -340,9 +433,29 @@ export function elementSurfaceStyle(element: SlideElement, theme: SlideTheme): R
 	if (element.type !== "text" || style.fill) css.background = cssColor(style.fill, element.type === "text" ? "transparent" : theme.accent);
 	if (style.fill === "transparent") css.background = "transparent";
 	if (style.stroke && (style.strokeWidth ?? 0) > 0) css.border = `${style.strokeWidth}px solid ${cssColor(style.stroke, theme.color)}`;
+	if (isPolygonShape(element.type)) {
+		// The polygon (see `shapeSvgAttributes`) paints fill and border; the text sits on top of it.
+		css.background = "transparent";
+		delete css.border;
+		css.position = "relative";
+		if (element.type === "triangle") css.padding = `${Math.round(element.h * 0.3)}px ${Math.round(element.w * 0.2)}px 10px`;
+		if (element.type === "arrow") css.padding = `${Math.round(element.h * 0.25)}px ${Math.round(Math.min(element.w * 0.5, element.h) * 0.6)}px ${Math.round(element.h * 0.25)}px 10px`;
+	}
 	if (element.type === "ellipse") css.borderRadius = "50%";
 	else if (style.radius) css.borderRadius = `${style.radius}px`;
 	return css;
+}
+
+/** Fill and border of a triangle or arrow polygon. */
+export function shapeSvgAttributes(element: SlideElement, theme: SlideTheme): { points: string; fill: string; stroke: string; strokeWidth: number } {
+	const style = element.style ?? {};
+	const strokeWidth = style.stroke ? style.strokeWidth ?? 0 : 0;
+	return {
+		points: shapePoints(element.type === "arrow" ? "arrow" : "triangle", element.w, element.h),
+		fill: style.fill === "transparent" ? "none" : cssColor(style.fill, theme.accent),
+		stroke: strokeWidth > 0 ? cssColor(style.stroke, theme.color) : "none",
+		strokeWidth,
+	};
 }
 
 const toCss = (css: Record<string, string>) => Object.entries(css).map(([key, value]) => `${key.replace(/[A-Z]/g, (char) => `-${char.toLowerCase()}`)}:${value}`).join(";");
@@ -362,7 +475,13 @@ function exportElement(element: SlideElement, theme: SlideTheme, sanitize: (html
 		const width = style.strokeWidth ?? 3;
 		return `<div style="${box}"><svg width="100%" height="100%" viewBox="0 0 ${element.w} ${element.h}" preserveAspectRatio="none"><line x1="0" y1="${element.h / 2}" x2="${element.w}" y2="${element.h / 2}" stroke="${escapeHtml(stroke)}" stroke-width="${width}"/></svg></div>`;
 	}
-	return `<div style="${box}"><div class="fs-slide-text" style="${escapeHtml(toCss(elementSurfaceStyle(element, theme)))}"><div>${sanitize(element.html ?? "")}</div></div></div>`;
+	if (!hasTextBody(element.type)) return "";
+	let shape = "";
+	if (isPolygonShape(element.type)) {
+		const svg = shapeSvgAttributes(element, theme);
+		shape = `<svg width="100%" height="100%" viewBox="0 0 ${element.w} ${element.h}" preserveAspectRatio="none" style="position:absolute;inset:0;overflow:visible"><polygon points="${svg.points}" fill="${escapeHtml(svg.fill)}" stroke="${escapeHtml(svg.stroke)}" stroke-width="${svg.strokeWidth}" stroke-linejoin="round"/></svg>`;
+	}
+	return `<div style="${box}">${shape}<div class="fs-slide-text" style="${escapeHtml(toCss(elementSurfaceStyle(element, theme)))}"><div>${sanitize(element.html ?? "")}</div></div></div>`;
 }
 
 /**
@@ -371,7 +490,7 @@ function exportElement(element: SlideElement, theme: SlideTheme, sanitize: (html
  */
 export function buildPresentationHtml(content: PresentationContent, name: string, sanitize: (html: string) => string): string {
 	const theme = resolveTheme(content);
-	const slides = content.slides.map((slide) => {
+	const slides = presentableIndices(content.slides).map((index) => content.slides[index]).map((slide) => {
 		const background = cssColor(slide.background, theme.background);
 		return `<section class="slide" style="background:${escapeHtml(background)}">${slide.elements.map((element) => exportElement(element, theme, sanitize)).join("")}</section>`;
 	}).join("\n");

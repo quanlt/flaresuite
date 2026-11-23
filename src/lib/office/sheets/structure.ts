@@ -4,7 +4,7 @@
  */
 import type { Cell, Sheet, SpreadsheetContent } from "../types";
 import { SPREADSHEET_MAX_COLS, SPREADSHEET_MAX_ROWS } from "../utils";
-import { cellAddress, formatCellRef, parseCellRef, quoteSheetName } from "./address";
+import { cellAddress, formatCellRef, formatRange, parseCellRef, parseRange, quoteSheetName } from "./address";
 import type { CellRef, RangeCoord } from "./address";
 import { isFormula, tokenize } from "./formula";
 
@@ -101,6 +101,43 @@ function remapKeyed(map: Record<string, number> | undefined, mapIndex: (index: n
 	return next;
 }
 
+/**
+ * Moves merged ranges and the filter range along with inserted or deleted lines. `mapSpan` maps the first and
+ * last index of a range on the axis and returns null when every line of it was deleted.
+ */
+function remapRanges(sheet: Sheet, axis: Axis, mapSpan: (low: number, high: number) => [number, number] | null): Pick<Sheet, "merges" | "filter"> {
+	const remap = (text: string): string | null => {
+		const range = parseRange(text);
+		if (!range) return null;
+		const span = axis === "row" ? mapSpan(range.start.row, range.end.row) : mapSpan(range.start.col, range.end.col);
+		if (!span) return null;
+		const next: RangeCoord = axis === "row"
+			? { start: { row: span[0], col: range.start.col }, end: { row: span[1], col: range.end.col } }
+			: { start: { row: range.start.row, col: span[0] }, end: { row: range.end.row, col: span[1] } };
+		return formatRange(next);
+	};
+	const result: Pick<Sheet, "merges" | "filter"> = {};
+	if (sheet.merges) {
+		const merges = sheet.merges.map(remap).filter((entry): entry is string => !!entry && entry.includes(":"));
+		result.merges = merges.length ? merges : undefined;
+	}
+	if (sheet.filter) {
+		const range = remap(sheet.filter.range);
+		if (!range) result.filter = undefined;
+		else if (axis === "row" || !sheet.filter.hidden) result.filter = { ...sheet.filter, range };
+		else {
+			// Hidden values are keyed by column index, so they follow their column.
+			const hidden: Record<string, string[]> = {};
+			for (const [key, values] of Object.entries(sheet.filter.hidden)) {
+				const span = mapSpan(Number(key), Number(key));
+				if (span) hidden[String(span[0])] = values;
+			}
+			result.filter = { range, hidden };
+		}
+	}
+	return result;
+}
+
 function moveCells(sheet: Sheet, axis: Axis, mapIndex: (index: number) => number | null): Record<string, Cell> {
 	const cells: Record<string, Cell> = {};
 	for (const [address, cell] of Object.entries(sheet.cells)) {
@@ -135,6 +172,13 @@ export function insertLines(content: SpreadsheetContent, sheetId: string, axis: 
 			return {
 				...sheet,
 				cells: moveCells(sheet, axis, mapIndex),
+				...remapRanges(sheet, axis, (low, high) => {
+					const max1 = max - 1;
+					const a = Math.min(max1, shift(low));
+					// A line inserted inside a range widens it; one inserted before its start moves it.
+					const b = Math.min(max1, high >= index ? high + added : high);
+					return [a, b];
+				}),
 				rowCount: axis === "row" ? sheet.rowCount + added : sheet.rowCount,
 				colCount: axis === "col" ? sheet.colCount + added : sheet.colCount,
 				rowHeights: axis === "row" ? remapKeyed(sheet.rowHeights, mapIndex) : sheet.rowHeights,
@@ -177,6 +221,12 @@ export function deleteLines(content: SpreadsheetContent, sheetId: string, axis: 
 			return {
 				...sheet,
 				cells: moveCells(sheet, axis, mapIndex),
+				...remapRanges(sheet, axis, (low, high) => {
+					if (low >= index && high < last) return null;
+					const newLow = low < index ? low : low >= last ? low - removed : index;
+					const newHigh = high >= last ? high - removed : high < index ? high : index - 1;
+					return [newLow, newHigh];
+				}),
 				rowCount: axis === "row" ? sheet.rowCount - removed : sheet.rowCount,
 				colCount: axis === "col" ? sheet.colCount - removed : sheet.colCount,
 				rowHeights: axis === "row" ? remapKeyed(sheet.rowHeights, mapIndex) : sheet.rowHeights,

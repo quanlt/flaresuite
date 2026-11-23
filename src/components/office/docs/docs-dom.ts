@@ -127,7 +127,7 @@ export function moveInTable(root: HTMLElement, backwards: boolean): boolean {
 	return true;
 }
 
-const KEPT_ATTRIBUTES = new Set(["href", "src", "alt", "colspan", "rowspan", "data-checked", "data-type", "data-title", "data-page-break"]);
+const KEPT_ATTRIBUTES = new Set(["href", "src", "alt", "colspan", "rowspan", "data-checked", "data-type", "data-title", "data-subtitle", "data-page-break"]);
 const UNWRAPPED_TAGS = new Set(["SPAN", "FONT", "O:P", "SECTION", "ARTICLE", "MAIN", "HEADER", "FOOTER"]);
 
 /**
@@ -181,3 +181,216 @@ export function tableHtml(rows: number, cols: number): string {
 }
 
 export const PAGE_BREAK_HTML = "<div data-page-break=\"true\" contenteditable=\"false\"></div><p><br></p>";
+
+const LEAF_BLOCK_SELECTOR = "p,h1,h2,h3,h4,h5,h6,blockquote,pre,li";
+
+/** The paragraphs (and headings, list items …) the selection touches, for paragraph-level formatting. */
+export function selectedBlocks(root: HTMLElement): HTMLElement[] {
+	const range = selectionRangeIn(root);
+	if (!range) return [];
+	const start = blockAtSelection(root);
+	if (range.collapsed) return start ? [start] : [];
+	const blocks = Array.from(root.querySelectorAll<HTMLElement>(LEAF_BLOCK_SELECTOR)).filter((block) => {
+		if (!range.intersectsNode(block)) return false;
+		// A list item that holds a nested list is formatted through its own text, not as a whole.
+		return !block.querySelector(LEAF_BLOCK_SELECTOR) || block.tagName === "LI";
+	});
+	if (blocks.length) return blocks;
+	return start ? [start] : [];
+}
+
+/** Sets one style property on every selected block; an empty value removes it. */
+export function setBlockStyle(root: HTMLElement, property: "lineHeight" | "marginTop" | "marginBottom", value: string): void {
+	for (const block of selectedBlocks(root)) {
+		block.style[property] = value;
+		if (!block.getAttribute("style")) block.removeAttribute("style");
+	}
+}
+
+/** Gives the list at the caret a marker style, turning the selection into the right kind of list first. */
+export function setListStyle(root: HTMLElement, style: string): void {
+	const ordered = !["disc", "circle", "square"].includes(style);
+	let list = blockAtSelection(root)?.closest("ul,ol") as HTMLElement | null;
+	if (!list || list.tagName !== (ordered ? "OL" : "UL") || list.getAttribute("data-type") === "checklist") {
+		if (list?.getAttribute("data-type") === "checklist") toggleChecklist(root);
+		exec(ordered ? "insertOrderedList" : "insertUnorderedList");
+		list = blockAtSelection(root)?.closest("ul,ol") as HTMLElement | null;
+	}
+	if (list && root.contains(list)) list.style.listStyleType = style;
+}
+
+/** Rewrites the selected text in place, keeping its formatting. `transform` gets each piece and the character before it. */
+export function transformSelectedText(root: HTMLElement, transform: (text: string, previous: string) => string): boolean {
+	const range = selectionRangeIn(root);
+	if (!range || range.collapsed) return false;
+	const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+	const nodes: Text[] = [];
+	while (walker.nextNode()) if (range.intersectsNode(walker.currentNode)) nodes.push(walker.currentNode as Text);
+	const { startContainer, startOffset, endContainer, endOffset } = range;
+	let previous = "";
+	let lastBlock: Element | null = null;
+	for (const node of nodes) {
+		const from = node === startContainer ? startOffset : 0;
+		const to = node === endContainer ? endOffset : node.data.length;
+		const block = node.parentElement?.closest(LEAF_BLOCK_SELECTOR) ?? null;
+		if (block !== lastBlock) previous = "";
+		lastBlock = block;
+		if (from > 0) previous = node.data[from - 1];
+		const piece = node.data.slice(from, to);
+		const next = transform(piece, previous);
+		// Case changes can alter length; only rewrite pieces that keep it so the selection stays valid.
+		if (next.length === piece.length) node.data = node.data.slice(0, from) + next + node.data.slice(to);
+		previous = piece.slice(-1) || previous;
+	}
+	const selection = window.getSelection();
+	const restored = document.createRange();
+	restored.setStart(startContainer, startOffset);
+	restored.setEnd(endContainer, endOffset);
+	selection?.removeAllRanges();
+	selection?.addRange(restored);
+	return true;
+}
+
+/* ---------- Find ---------- */
+
+export type TextIndex = { text: string; segments: { node: Text; start: number }[] };
+
+/** The page's text as one string (blocks separated by newlines) plus where each text node sits in it. */
+export function buildTextIndex(root: HTMLElement): TextIndex {
+	const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+	const segments: TextIndex["segments"] = [];
+	let text = "";
+	let lastBlock: Element | null = null;
+	while (walker.nextNode()) {
+		const node = walker.currentNode as Text;
+		const block = node.parentElement?.closest(`${LEAF_BLOCK_SELECTOR},td,th,div`) ?? null;
+		if (segments.length && block !== lastBlock) text += "\n";
+		lastBlock = block;
+		segments.push({ node, start: text.length });
+		text += node.data;
+	}
+	return { text, segments };
+}
+
+function locate(index: TextIndex, position: number, end: boolean): { node: Text; offset: number } | null {
+	for (const segment of index.segments) {
+		const length = segment.node.data.length;
+		if (end ? position > segment.start && position <= segment.start + length : position >= segment.start && position < segment.start + length) {
+			return { node: segment.node, offset: position - segment.start };
+		}
+	}
+	return null;
+}
+
+/** A DOM range for a span of the indexed text. */
+export function rangeForMatch(index: TextIndex, start: number, end: number): Range | null {
+	const from = locate(index, start, false);
+	const to = locate(index, end, true);
+	if (!from || !to) return null;
+	const range = document.createRange();
+	range.setStart(from.node, from.offset);
+	range.setEnd(to.node, to.offset);
+	return range;
+}
+
+type HighlightRegistry = { set: (name: string, value: unknown) => void; delete: (name: string) => void };
+
+function highlightRegistry(): { registry: HighlightRegistry; create: (ranges: Range[]) => unknown } | null {
+	const registry = (globalThis.CSS as unknown as { highlights?: HighlightRegistry } | undefined)?.highlights;
+	const HighlightClass = (globalThis as unknown as { Highlight?: new (...ranges: Range[]) => unknown }).Highlight;
+	if (!registry || !HighlightClass) return null;
+	return { registry, create: (ranges) => new HighlightClass(...ranges) };
+}
+
+/** Paints find matches with the CSS Custom Highlight API (no DOM changes, so nothing reaches the saved HTML). */
+export function paintFindHighlights(ranges: Range[], current: Range | null): void {
+	const api = highlightRegistry();
+	if (!api) return;
+	api.registry.set("fs-docs-find", api.create(ranges));
+	if (current) api.registry.set("fs-docs-find-current", api.create([current]));
+	else api.registry.delete("fs-docs-find-current");
+}
+
+export function clearFindHighlights(): void {
+	const api = highlightRegistry();
+	api?.registry.delete("fs-docs-find");
+	api?.registry.delete("fs-docs-find-current");
+}
+
+/** Scrolls a range into the middle of its scrolling container. */
+export function scrollRangeIntoView(range: Range): void {
+	const element = range.startContainer.nodeType === Node.ELEMENT_NODE ? range.startContainer as Element : range.startContainer.parentElement;
+	element?.scrollIntoView({ block: "center", inline: "nearest" });
+}
+
+/* ---------- Tables ---------- */
+
+/** Adds or removes a row or column of the table at the caret. Returns false outside a table. */
+export function editTable(root: HTMLElement, edit: "rowAbove" | "rowBelow" | "columnLeft" | "columnRight" | "deleteRow" | "deleteColumn" | "deleteTable"): boolean {
+	const cell = elementAtSelection(root)?.closest("td,th") as HTMLTableCellElement | null;
+	const table = cell?.closest("table") as HTMLTableElement | null;
+	if (!cell || !table || !root.contains(table)) return false;
+	const row = cell.parentElement as HTMLTableRowElement;
+	const column = cell.cellIndex;
+	const focusCell = (target: HTMLTableCellElement | null | undefined) => {
+		if (!target) return;
+		const range = document.createRange();
+		range.selectNodeContents(target);
+		range.collapse(true);
+		const selection = window.getSelection();
+		selection?.removeAllRanges();
+		selection?.addRange(range);
+	};
+	const removeTable = () => {
+		const after = table.nextElementSibling;
+		table.remove();
+		if (after) focusCell(after as HTMLTableCellElement);
+	};
+	switch (edit) {
+		case "rowAbove":
+		case "rowBelow": {
+			const added = row.cloneNode(true) as HTMLTableRowElement;
+			// A row added above the header row stays a body row.
+			for (const entry of Array.from(added.cells)) {
+				const replacement = document.createElement(row.parentElement?.tagName === "THEAD" && edit === "rowBelow" ? "td" : entry.tagName.toLowerCase());
+				replacement.innerHTML = "<br>";
+				entry.replaceWith(replacement);
+			}
+			if (row.parentElement?.tagName === "THEAD" && edit === "rowBelow") {
+				const body = table.tBodies[0] ?? table.appendChild(document.createElement("tbody"));
+				body.insertBefore(added, body.firstChild);
+			} else {
+				row.parentNode?.insertBefore(added, edit === "rowAbove" ? row : row.nextSibling);
+			}
+			focusCell(added.cells[Math.min(column, added.cells.length - 1)]);
+			return true;
+		}
+		case "columnLeft":
+		case "columnRight":
+			for (const entry of Array.from(table.rows)) {
+				const reference = entry.cells[Math.min(column, entry.cells.length - 1)];
+				const added = document.createElement(reference?.tagName.toLowerCase() === "th" ? "th" : "td");
+				added.innerHTML = "<br>";
+				if (!reference) entry.appendChild(added);
+				else entry.insertBefore(added, edit === "columnLeft" ? reference : reference.nextSibling);
+			}
+			focusCell(row.cells[edit === "columnLeft" ? column : column + 1]);
+			return true;
+		case "deleteRow": {
+			if (table.rows.length <= 1) { removeTable(); return true; }
+			const next = (row.nextElementSibling ?? row.previousElementSibling) as HTMLTableRowElement | null;
+			row.remove();
+			focusCell(next?.cells[Math.min(column, next.cells.length - 1)] ?? table.rows[0]?.cells[0]);
+			return true;
+		}
+		case "deleteColumn": {
+			if (row.cells.length <= 1) { removeTable(); return true; }
+			for (const entry of Array.from(table.rows)) entry.cells[column]?.remove();
+			focusCell(row.cells[Math.min(column, row.cells.length - 1)]);
+			return true;
+		}
+		case "deleteTable":
+			removeTable();
+			return true;
+	}
+}

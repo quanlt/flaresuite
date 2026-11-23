@@ -25,6 +25,7 @@ await build({
 });
 const slides = await import(pathToFileURL(join(directory, "entry.mjs")).href);
 const { applyResize, rotationFromPointer, computeSnap, alignElements, moveZ, moveItem, cloneSlide, createSlide, createElement, applyTheme, themeIdOf, isHtmlEmpty, safeImageSrc, fitSize, buildPresentationHtml, boundsOf, SLIDE_THEMES, SLIDE_LAYOUTS, validateOfficeContent } = slides;
+const { shapePoints, hasTextBody, presentableIndices, presentStart, applyLayout, safeFontFamily, elementSurfaceStyle, shapeSvgAttributes, FONT_FAMILIES } = slides;
 
 const el = (id, x = 0, y = 0, w = 100, h = 50) => ({ id, type: "rect", x, y, w, h });
 
@@ -190,4 +191,102 @@ test("the HTML export is self-contained and runs rich text through the sanitizer
 	assert.ok(!html.includes("javascript:alert"));
 	assert.ok(html.includes("ArrowRight"));
 	assert.ok(!/<(script|link)[^>]+src=/i.test(html), "no external resources");
+});
+
+test("triangles and arrows are text shapes drawn as polygons that fill their box", () => {
+	assert.equal(shapePoints("triangle", 100, 80), "50,0 100,80 0,80");
+	const arrow = shapePoints("arrow", 200, 100).split(" ").map((point) => point.split(",").map(Number));
+	assert.equal(arrow.length, 7);
+	assert.deepEqual(arrow[3], [200, 50], "the tip is at the right middle");
+	assert.ok(arrow.every(([x, y]) => x >= 0 && x <= 200 && y >= 0 && y <= 100));
+	assert.equal(hasTextBody("triangle"), true);
+	assert.equal(hasTextBody("arrow"), true);
+	assert.equal(hasTextBody("line"), false);
+	assert.equal(hasTextBody("image"), false);
+	const triangle = createElement("triangle", SLIDE_THEMES.light);
+	assert.equal(triangle.html, "");
+	assert.equal(triangle.style.fill, SLIDE_THEMES.light.accent);
+	assert.equal(triangle.x + triangle.w / 2, 480);
+});
+
+test("polygon shapes paint their fill and border in the SVG, not the text box", () => {
+	const arrow = { id: "a", type: "arrow", x: 0, y: 0, w: 200, h: 100, style: { fill: "#ff0000", stroke: "#000000", strokeWidth: 2 } };
+	const surface = elementSurfaceStyle(arrow, SLIDE_THEMES.light);
+	assert.equal(surface.background, "transparent");
+	assert.equal(surface.border, undefined);
+	const svg = shapeSvgAttributes(arrow, SLIDE_THEMES.light);
+	assert.equal(svg.fill, "#ff0000");
+	assert.equal(svg.stroke, "#000000");
+	assert.equal(shapeSvgAttributes({ ...arrow, style: { fill: "transparent" } }, SLIDE_THEMES.light).fill, "none");
+	assert.equal(shapeSvgAttributes({ ...arrow, style: {} }, SLIDE_THEMES.light).stroke, "none");
+});
+
+test("underline and font family are element styles, and unsafe fonts fall back", () => {
+	const text = { id: "t", type: "text", x: 0, y: 0, w: 10, h: 10, style: { underline: true, fontFamily: FONT_FAMILIES[4].value } };
+	const css = elementSurfaceStyle(text, SLIDE_THEMES.light);
+	assert.equal(css.textDecoration, "underline");
+	assert.equal(css.fontFamily, FONT_FAMILIES[4].value);
+	assert.equal(safeFontFamily("Arial; background:url(x)", "Inter"), "Inter");
+	assert.equal(safeFontFamily(undefined, "Inter"), "Inter");
+	for (const font of FONT_FAMILIES) assert.equal(safeFontFamily(font.value, "x"), font.value);
+});
+
+test("skipped slides are left out of the slideshow", () => {
+	const slides = [{}, { skipped: true }, {}, { skipped: true }];
+	assert.deepEqual(presentableIndices(slides), [0, 2]);
+	assert.equal(presentStart(slides, 1), 2, "starting on a skipped slide begins at the next shown one");
+	assert.equal(presentStart(slides, 3), 2, "after the last shown slide it starts at the last shown one");
+	assert.deepEqual(presentableIndices([{ skipped: true }, { skipped: true }]), [0, 1], "a deck that skips everything still plays");
+	assert.deepEqual(presentableIndices([]), []);
+});
+
+test("applying a layout moves text into its placeholders and keeps everything else", () => {
+	const theme = SLIDE_THEMES.light;
+	const slide = {
+		id: "s",
+		notes: "keep me",
+		elements: [
+			{ id: "title", type: "text", x: 5, y: 5, w: 100, h: 40, html: "<p>Title</p>", style: { fontSize: 30, color: "#ff0000" } },
+			{ id: "pic", type: "image", x: 10, y: 10, w: 50, h: 50, src: "https://example.com/a.png" },
+			{ id: "body", type: "text", x: 5, y: 60, w: 100, h: 40, html: "<p>Body</p>" },
+			{ id: "extra", type: "text", x: 5, y: 120, w: 100, h: 40, html: "<p>Extra</p>" },
+		],
+	};
+	const next = applyLayout(slide, "titleBody", theme);
+	const reference = createSlide("titleBody", theme);
+	const title = next.elements.find((element) => element.id === "title");
+	assert.equal(title.html, "<p>Title</p>");
+	assert.equal(title.x, reference.elements[0].x);
+	assert.equal(title.style.fontSize, reference.elements[0].style.fontSize);
+	assert.equal(title.style.color, "#ff0000", "a custom colour survives");
+	assert.equal(next.elements.find((element) => element.id === "body").y, reference.elements[1].y);
+	assert.ok(next.elements.some((element) => element.id === "pic"), "images stay");
+	assert.ok(next.elements.some((element) => element.id === "extra"), "text without a placeholder stays");
+	assert.equal(next.notes, "keep me");
+	assert.equal(next.id, "s");
+	const section = applyLayout(applyLayout(slide, "section", theme), "section", theme);
+	assert.equal(section.elements.filter((element) => element.type === "rect").length, 1, "decorations are not added twice");
+	const twoColumns = applyLayout({ id: "e", elements: [] }, "twoColumns", theme);
+	assert.equal(twoColumns.elements.length, 3, "an empty slide gets empty placeholders");
+});
+
+test("new shape types, underline and skipped slides load and validate", () => {
+	const deck = { slides: [{ id: "s", skipped: true, elements: [createElement("triangle", SLIDE_THEMES.light), createElement("arrow", SLIDE_THEMES.light), { id: "t", type: "text", x: 0, y: 0, w: 10, h: 10, style: { underline: true } }] }] };
+	assert.equal(validateOfficeContent("presentation", deck), null);
+});
+
+test("the HTML export draws polygons and leaves skipped slides out", () => {
+	const content = {
+		theme: { ...SLIDE_THEMES.light },
+		slides: [
+			{ id: "s1", elements: [{ id: "a", type: "triangle", x: 0, y: 0, w: 100, h: 80, html: "<p>Up</p>", style: { fill: "#00ff00" } }] },
+			{ id: "s2", skipped: true, elements: [] },
+			{ id: "s3", elements: [{ id: "u", type: "unknown-future-type", x: 0, y: 0, w: 1, h: 1 }] },
+		],
+	};
+	const html = buildPresentationHtml(content, "Deck", (value) => value);
+	assert.equal((html.match(/<section class="slide"/g) ?? []).length, 2);
+	assert.ok(html.includes('<polygon points="50,0 100,80 0,80" fill="#00ff00"'));
+	assert.ok(html.includes("<p>Up</p>"));
+	assert.ok(!html.includes("unknown-future-type"));
 });

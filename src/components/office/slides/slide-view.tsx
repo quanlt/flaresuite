@@ -4,7 +4,7 @@ import type { CSSProperties, ReactNode } from "react";
 import { SLIDE_HEIGHT, SLIDE_WIDTH } from "@/lib/office/utils";
 import type { Slide, SlideElement } from "@/lib/office/types";
 import { sanitizeOfficeHtml } from "../sanitize";
-import { elementBoxStyle, elementSurfaceStyle, isHtmlEmpty, safeImageSrc, SLIDE_TEXT_CSS } from "./slides-utils";
+import { elementBoxStyle, elementSurfaceStyle, hasTextBody, isHtmlEmpty, isPolygonShape, safeImageSrc, shapeSvgAttributes, SLIDE_TEXT_CSS } from "./slides-utils";
 import type { SlideTheme } from "./slides-types";
 
 /** The rules rich text inside slides needs; render once per page that shows slides. */
@@ -36,14 +36,26 @@ export function ElementSurface({ element, theme, hint, children }: { element: Sl
 			</svg>
 		);
 	}
+	// A type this version does not know (saved by a newer one) shows nothing rather than breaking the slide.
+	if (!hasTextBody(element.type)) return null;
 	const surface = elementSurfaceStyle(element, theme) as CSSProperties;
 	const empty = isHtmlEmpty(element.html);
-	return (
+	const text = (
 		<div className="fs-slide-text" style={surface}>
 			{children ?? (empty && hint
 				? <div style={{ opacity: 0.45 }}>{hint}</div>
 				// Stored rich text comes from other people too, so it is always sanitized before rendering.
 				: <div dangerouslySetInnerHTML={{ __html: sanitizeOfficeHtml(element.html ?? "") }} />)}
+		</div>
+	);
+	if (!isPolygonShape(element.type)) return text;
+	const svg = shapeSvgAttributes(element, theme);
+	return (
+		<div style={{ position: "relative", width: "100%", height: "100%" }}>
+			<svg width="100%" height="100%" viewBox={`0 0 ${Math.max(1, element.w)} ${Math.max(1, element.h)}`} preserveAspectRatio="none" style={{ position: "absolute", inset: 0, overflow: "visible", pointerEvents: "none" }} aria-hidden="true">
+				<polygon points={svg.points} fill={svg.fill} stroke={svg.stroke} strokeWidth={svg.strokeWidth} strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
+			</svg>
+			{text}
 		</div>
 	);
 }

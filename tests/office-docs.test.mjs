@@ -113,3 +113,66 @@ test("templates produce non-empty HTML", () => {
 		assert.ok(content.html.length > 50);
 	}
 });
+
+test("font size steps through the presets and past their ends", () => {
+	assert.equal(docs.stepFontSize(11, 1), 12);
+	assert.equal(docs.stepFontSize(11, -1), 10);
+	assert.equal(docs.stepFontSize(13, 1), 14);
+	assert.equal(docs.stepFontSize(13, -1), 12);
+	assert.equal(docs.stepFontSize(96, 1), 97);
+	assert.equal(docs.stepFontSize(8, -1), 7);
+	assert.equal(docs.stepFontSize(1, -1), 1);
+	assert.equal(docs.stepFontSize(null, 1), 12);
+});
+
+test("typed font sizes are parsed and bounded", () => {
+	assert.equal(docs.parseFontSize("14"), 14);
+	assert.equal(docs.parseFontSize(" 10,5 "), 10.5);
+	assert.equal(docs.parseFontSize("10.3"), 10.5);
+	assert.equal(docs.parseFontSize("0"), null);
+	assert.equal(docs.parseFontSize("abc"), null);
+	assert.equal(docs.parseFontSize("1000"), null);
+});
+
+test("line heights snap to the nearest preset", () => {
+	assert.equal(docs.nearestLineHeight(1.5), 1.5);
+	assert.equal(docs.nearestLineHeight(1.149), 1.15);
+	assert.equal(docs.nearestLineHeight(1.3), null);
+	assert.equal(docs.nearestLineHeight(Number.NaN), null);
+	assert.equal(docs.nearestLineHeight(null), null);
+});
+
+test("find matches ignore case unless asked and never overlap", () => {
+	assert.deepEqual(docs.findMatches("Cat cat CAT", "cat"), [[0, 3], [4, 7], [8, 11]]);
+	assert.deepEqual(docs.findMatches("Cat cat CAT", "cat", true), [[4, 7]]);
+	assert.deepEqual(docs.findMatches("aaaa", "aa"), [[0, 2], [2, 4]]);
+	assert.deepEqual(docs.findMatches("text", ""), []);
+	assert.deepEqual(docs.findMatches("Tiếng Việt", "việt"), [[6, 10]]);
+});
+
+test("case changes, including title case across pieces", () => {
+	assert.equal(docs.changeCase("Hello World", "lower"), "hello world");
+	assert.equal(docs.changeCase("Hello World", "upper"), "HELLO WORLD");
+	assert.equal(docs.changeCase("the QUICK brown-fox it's", "title"), "The Quick Brown-Fox It's");
+	assert.equal(docs.changeCase("llo world", "title", "e"), "llo World");
+	assert.equal(docs.changeCase("đây là", "title"), "Đây Là");
+});
+
+test("word count stats", () => {
+	assert.deepEqual(docs.textStats("Hello big\nworld"), { words: 3, characters: 14, charactersNoSpaces: 13 });
+	assert.deepEqual(docs.textStats(""), { words: 0, characters: 0, charactersNoSpaces: 0 });
+});
+
+test("inserted dates follow the locale", () => {
+	const date = new Date(2026, 10, 23);
+	assert.equal(docs.formatInsertDate(date, "en"), "November 23, 2026");
+	assert.match(docs.formatInsertDate(date, "vi"), /2026/);
+	assert.equal(typeof docs.formatInsertDate(date, "not a locale!"), "string");
+});
+
+test("special character groups have unique characters", () => {
+	for (const group of docs.SPECIAL_CHARACTERS) {
+		const chars = [...group.chars];
+		assert.equal(new Set(chars).size, chars.length, group.key);
+	}
+});

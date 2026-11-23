@@ -6,23 +6,26 @@ import { useLanguage } from "@/components/language-provider";
 import { SLIDE_HEIGHT, SLIDE_WIDTH } from "@/lib/office/utils";
 import type { PresentationContent } from "@/lib/office/types";
 import { SlidePreview } from "./slide-view";
-import { clamp, resolveTheme } from "./slides-utils";
+import { presentableIndices, presentStart, resolveTheme } from "./slides-utils";
 
 /**
  * Full-screen slideshow. Arrow keys, Space, Page Up/Down and clicks move between slides, N shows the speaker
- * notes, Escape (or leaving full screen) ends it.
+ * notes, Escape (or leaving full screen) ends it. Skipped slides are left out.
  */
 export function PresentMode({ content, startIndex, onExit }: { content: PresentationContent; startIndex: number; onExit: (lastIndex: number) => void }) {
 	const { t } = useLanguage();
 	const rootRef = useRef<HTMLDivElement>(null);
-	const [index, setIndex] = useState(() => clamp(startIndex, 0, Math.max(0, content.slides.length - 1)));
+	// `index` is the deck position; `order` lists the positions the slideshow shows.
+	const [index, setIndex] = useState(() => presentStart(content.slides, startIndex));
 	const [showNotes, setShowNotes] = useState(false);
 	const [viewport, setViewport] = useState(() => ({ w: typeof window === "undefined" ? SLIDE_WIDTH : window.innerWidth, h: typeof window === "undefined" ? SLIDE_HEIGHT : window.innerHeight }));
 	const indexRef = useRef(index);
 	useEffect(() => { indexRef.current = index; }, [index]);
 	const exitRef = useRef(onExit);
 	useEffect(() => { exitRef.current = onExit; }, [onExit]);
-	const count = content.slides.length;
+	const order = presentableIndices(content.slides);
+	const count = order.length;
+	const step = Math.max(0, order.indexOf(index));
 	const theme = resolveTheme(content);
 
 	useEffect(() => {
@@ -45,14 +48,14 @@ export function PresentMode({ content, startIndex, onExit }: { content: Presenta
 		};
 	}, []);
 
-	const go = (delta: number) => setIndex((current) => clamp(current + delta, 0, Math.max(0, count - 1)));
+	const go = (delta: number) => { const next = order[step + delta]; if (next !== undefined) setIndex(next); };
 
 	function onKeyDown(event: React.KeyboardEvent) {
 		const key = event.key;
 		if (["ArrowRight", "ArrowDown", "PageDown", " ", "Enter"].includes(key)) { event.preventDefault(); go(1); }
 		else if (["ArrowLeft", "ArrowUp", "PageUp", "Backspace"].includes(key)) { event.preventDefault(); go(-1); }
-		else if (key === "Home") setIndex(0);
-		else if (key === "End") setIndex(Math.max(0, count - 1));
+		else if (key === "Home") setIndex(order[0] ?? 0);
+		else if (key === "End") setIndex(order[count - 1] ?? 0);
 		else if (key === "n" || key === "N") setShowNotes((value) => !value);
 		else if (key === "Escape") { event.preventDefault(); onExit(index); }
 	}
@@ -82,9 +85,9 @@ export function PresentMode({ content, startIndex, onExit }: { content: Presenta
 				</div>
 			)}
 			<div className="absolute bottom-3 right-3 flex items-center gap-1 rounded-full px-2 py-1 text-sm opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100" style={{ background: "rgb(32 33 36 / 0.85)", color: "#e8eaed" }}>
-				<button type="button" onClick={() => go(-1)} disabled={index === 0} aria-label={t("slides.previousSlide")} className="rounded-full p-1.5 disabled:opacity-40" style={{ color: "#e8eaed" }}><ChevronLeft size={18} /></button>
-				<span className="px-1 tabular-nums">{t("slides.slideOf", { index: count ? index + 1 : 0, count })}</span>
-				<button type="button" onClick={() => go(1)} disabled={index >= count - 1} aria-label={t("slides.nextSlide")} className="rounded-full p-1.5 disabled:opacity-40" style={{ color: "#e8eaed" }}><ChevronRight size={18} /></button>
+				<button type="button" onClick={() => go(-1)} disabled={step === 0} aria-label={t("slides.previousSlide")} className="rounded-full p-1.5 disabled:opacity-40" style={{ color: "#e8eaed" }}><ChevronLeft size={18} /></button>
+				<span className="px-1 tabular-nums">{t("slides.slideOf", { index: count ? step + 1 : 0, count })}</span>
+				<button type="button" onClick={() => go(1)} disabled={step >= count - 1} aria-label={t("slides.nextSlide")} className="rounded-full p-1.5 disabled:opacity-40" style={{ color: "#e8eaed" }}><ChevronRight size={18} /></button>
 				<button type="button" onClick={() => setShowNotes((value) => !value)} aria-pressed={showNotes} className="rounded-full px-2 py-1 text-xs" style={{ color: "#e8eaed" }}>{t("slides.notes")}</button>
 				<button type="button" onClick={() => onExit(index)} aria-label={t("slides.exitPresentation")} className="rounded-full p-1.5" style={{ color: "#e8eaed" }}><X size={18} /></button>
 			</div>

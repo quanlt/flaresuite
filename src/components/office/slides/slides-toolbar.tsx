@@ -3,16 +3,14 @@
 import type { ReactNode } from "react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import clsx from "clsx";
-import { Bold, ChevronDown, Copy, ImagePlus, Italic, Link2, List, Palette, Play, Plus, Trash2, Underline, Undo2, Upload } from "@/components/icons";
+import { Bold, ChevronDown, Copy, ImagePlus, Italic, Link2, List, Palette, Play, Plus, Printer, Trash2, Underline, Undo2, Upload } from "@/components/icons";
 import { useLanguage } from "@/components/language-provider";
 import { Select } from "@/components/ui/select";
 import type { TranslationKey } from "@/lib/i18n/types";
 import type { SlideElement } from "@/lib/office/types";
-import { AlignCenterIcon, AlignLeftIcon, AlignRightIcon, ArrangeIcon, BackgroundIcon, BorderIcon, EllipseIcon, FillIcon, LineIcon, RectIcon, RedoIcon, RoundRectIcon, ShapesIcon, TextBoxIcon, TextColorIcon, VAlignBottomIcon, VAlignMiddleIcon, VAlignTopIcon } from "./slides-icons";
-import { SLIDE_LAYOUTS, SLIDE_THEMES } from "./slides-utils";
-import type { AlignMode, SlideLayoutId, SlideThemeId, ZOrderMove } from "./slides-types";
-
-export type InsertKind = "text" | "rect" | "roundRect" | "ellipse" | "line";
+import { AlignCenterIcon, AlignLeftIcon, AlignRightIcon, ArrangeIcon, ArrowShapeIcon, BackgroundIcon, BorderIcon, CursorIcon, EllipseIcon, FillIcon, LayoutIcon, LineIcon, RectIcon, RedoIcon, RoundRectIcon, ShapesIcon, TextBoxIcon, TextColorIcon, TriangleIcon, VAlignBottomIcon, VAlignMiddleIcon, VAlignTopIcon } from "./slides-icons";
+import { FONT_FAMILIES, FONT_SIZES, hasTextBody, LAYOUT_LABELS, SLIDE_LAYOUTS, SLIDE_THEMES, STROKE_WIDTHS, THEME_LABELS, ZOOM_LEVELS } from "./slides-utils";
+import type { AlignMode, InsertKind, SlideLayoutId, SlideThemeId, ZoomLevel, ZOrderMove } from "./slides-types";
 type Style = NonNullable<SlideElement["style"]>;
 
 export type SlidesToolbarProps = {
@@ -38,24 +36,20 @@ export type SlidesToolbarProps = {
 	background: string;
 	onBackground: (color: string | undefined, coalesce?: string) => void;
 	onPresent: (fromStart: boolean) => void;
+	onApplyLayout: (layout: SlideLayoutId) => void;
+	onSelectTool: () => void;
+	onPrint: () => void;
+	zoom: ZoomLevel;
+	onZoom: (zoom: ZoomLevel) => void;
+	hasSlide: boolean;
+	themeFont: string;
 };
 
 const menuClass = "z-[200] min-w-52 rounded-xl border border-neutral-200 bg-white p-1.5 shadow-xl";
 const menuItemClass = "flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-sm text-neutral-700 outline-none data-[highlighted]:bg-neutral-100";
-const FONT_SIZES = [10, 12, 14, 16, 18, 20, 24, 28, 32, 36, 40, 44, 48, 54, 60, 72, 96];
-const STROKE_WIDTHS = [0, 1, 2, 3, 4, 6, 8, 12];
 const OPACITIES = [100, 90, 75, 50, 25, 10];
 const RADII = [0, 4, 8, 16, 24, 48];
 
-export const LAYOUT_LABELS: Record<SlideLayoutId, TranslationKey> = {
-	title: "slides.layout.title",
-	titleBody: "slides.layout.titleBody",
-	section: "slides.layout.section",
-	twoColumns: "slides.layout.twoColumns",
-	imageCaption: "slides.layout.imageCaption",
-	blank: "slides.layout.blank",
-};
-const THEME_LABELS: Record<SlideThemeId, TranslationKey> = { light: "slides.theme.light", dark: "slides.theme.dark", blue: "slides.theme.blue", warm: "slides.theme.warm" };
 
 /** A color input as a toolbar button: the native picker opens on click. */
 function hex(value: string | undefined, fallback: string): string {
@@ -94,11 +88,11 @@ function Divider() {
 	return <span aria-hidden="true" className="mx-1 h-5 w-px shrink-0 bg-neutral-200" />;
 }
 
-function Menu({ trigger, label, children }: { trigger: ReactNode; label: string; children: ReactNode }) {
+function Menu({ trigger, label, children, compact }: { trigger: ReactNode; label: string; children: ReactNode; compact?: boolean }) {
 	return (
 		<DropdownMenu.Root>
 			<DropdownMenu.Trigger asChild>
-				<button type="button" aria-label={label} title={label} onMouseDown={(event) => event.preventDefault()} className="flex h-8 shrink-0 items-center gap-1 rounded-md px-1.5 text-sm text-neutral-700 hover:bg-neutral-100 data-[state=open]:bg-neutral-100">{trigger}<ChevronDown size={12} /></button>
+				<button type="button" aria-label={label} title={label} onMouseDown={(event) => event.preventDefault()} className={clsx("flex h-8 shrink-0 items-center gap-1 rounded-md text-sm text-neutral-700 hover:bg-neutral-100 data-[state=open]:bg-neutral-100", compact ? "px-0.5" : "px-1.5")}>{trigger}<ChevronDown size={12} /></button>
 			</DropdownMenu.Trigger>
 			<DropdownMenu.Portal>
 				<DropdownMenu.Content align="start" sideOffset={4} className={menuClass} onCloseAutoFocus={(event) => event.preventDefault()}>{children}</DropdownMenu.Content>
@@ -113,7 +107,7 @@ export function SlidesToolbar(props: SlidesToolbarProps) {
 	const { selection, editing } = props;
 	const first = selection[0];
 	const style: Style = first?.style ?? {};
-	const hasText = selection.some((element) => element.type === "text" || element.type === "rect" || element.type === "ellipse");
+	const hasText = selection.some((element) => hasTextBody(element.type));
 	const hasFill = selection.some((element) => element.type !== "line" && element.type !== "image");
 	const hasStroke = selection.some((element) => element.type !== "image");
 	const isRect = selection.length > 0 && selection.every((element) => element.type === "rect");
@@ -135,29 +129,52 @@ export function SlidesToolbar(props: SlidesToolbarProps) {
 		</DropdownMenu.Root>
 	);
 
+	const zoomSelect = (
+		<Select value={String(props.zoom)} onChange={(event) => props.onZoom(event.target.value === "fit" ? "fit" : Number(event.target.value))} aria-label={t("slides.zoom")} className="h-8 w-[5rem] text-xs" containerClassName="shrink-0">
+			<option value="fit">{t("slides.zoomFit")}</option>
+			{ZOOM_LEVELS.map((level) => <option key={level} value={String(level)}>{level}%</option>)}
+		</Select>
+	);
+
 	if (props.readOnly) {
-		return <div role="toolbar" aria-label={t("slides.toolbar")} className="flex h-12 shrink-0 items-center gap-1 border-b border-neutral-200 px-3 print:hidden">{present}</div>;
+		return (
+			<div role="toolbar" aria-label={t("slides.toolbar")} className="flex h-12 shrink-0 items-center gap-1 overflow-x-auto border-b border-neutral-200 px-3 print:hidden">
+				<ToolButton label={t("office.print")} onClick={props.onPrint}><Printer size={16} /></ToolButton>
+				{zoomSelect}
+				<span className="w-3 shrink-0" />
+				{present}
+			</div>
+		);
 	}
 
 	return (
 		<div role="toolbar" aria-label={t("slides.toolbar")} className="flex h-12 shrink-0 items-center gap-0.5 overflow-x-auto border-b border-neutral-200 px-2 print:hidden">
 			<ToolButton label={t("slides.undo")} onClick={props.onUndo} disabled={!props.canUndo}><Undo2 size={16} /></ToolButton>
 			<ToolButton label={t("slides.redo")} onClick={props.onRedo} disabled={!props.canRedo}><RedoIcon size={16} /></ToolButton>
+			<ToolButton label={t("office.print")} onClick={props.onPrint}><Printer size={16} /></ToolButton>
+			{zoomSelect}
 			<Divider />
-			<Menu label={t("slides.newSlide")} trigger={<><Plus size={16} /><span className="max-sm:hidden">{t("slides.newSlide")}</span></>}>
-				{SLIDE_LAYOUTS.map((layout) => <DropdownMenu.Item key={layout} className={menuItemClass} onSelect={() => props.onAddSlide(layout)}>{t(LAYOUT_LABELS[layout])}</DropdownMenu.Item>)}
-			</Menu>
+			<div className="flex shrink-0 items-center">
+				<ToolButton label={t("slides.newSlide")} onClick={() => props.onAddSlide("titleBody")}><Plus size={16} /><span className="text-sm max-sm:hidden">{t("slides.newSlide")}</span></ToolButton>
+				<Menu label={t("slides.newSlideWithLayout")} trigger={null} compact>
+					{SLIDE_LAYOUTS.map((layout) => <DropdownMenu.Item key={layout} className={menuItemClass} onSelect={() => props.onAddSlide(layout)}>{t(LAYOUT_LABELS[layout])}</DropdownMenu.Item>)}
+				</Menu>
+			</div>
+			<Divider />
+			<ToolButton label={t("slides.select")} active={!props.editing} onClick={props.onSelectTool}><CursorIcon size={16} /></ToolButton>
 			<ToolButton label={t("slides.textBox")} onClick={() => props.onInsert("text")}><TextBoxIcon size={17} /></ToolButton>
-			<Menu label={t("slides.shape")} trigger={<ShapesIcon size={17} />}>
-				<DropdownMenu.Item className={menuItemClass} onSelect={() => props.onInsert("rect")}><RectIcon size={16} />{t("slides.shape.rect")}</DropdownMenu.Item>
-				<DropdownMenu.Item className={menuItemClass} onSelect={() => props.onInsert("roundRect")}><RoundRectIcon size={16} />{t("slides.shape.roundRect")}</DropdownMenu.Item>
-				<DropdownMenu.Item className={menuItemClass} onSelect={() => props.onInsert("ellipse")}><EllipseIcon size={16} />{t("slides.shape.ellipse")}</DropdownMenu.Item>
-				<DropdownMenu.Item className={menuItemClass} onSelect={() => props.onInsert("line")}><LineIcon size={16} />{t("slides.shape.line")}</DropdownMenu.Item>
-			</Menu>
 			<Menu label={t("slides.image")} trigger={<ImagePlus size={17} />}>
 				<DropdownMenu.Item className={menuItemClass} onSelect={props.onUploadImage}><Upload size={16} />{t("slides.imageUpload")}</DropdownMenu.Item>
 				<DropdownMenu.Item className={menuItemClass} onSelect={props.onImageUrl}><Link2 size={16} />{t("slides.imageUrl")}</DropdownMenu.Item>
 			</Menu>
+			<Menu label={t("slides.shape")} trigger={<ShapesIcon size={17} />}>
+				<DropdownMenu.Item className={menuItemClass} onSelect={() => props.onInsert("rect")}><RectIcon size={16} />{t("slides.shape.rect")}</DropdownMenu.Item>
+				<DropdownMenu.Item className={menuItemClass} onSelect={() => props.onInsert("roundRect")}><RoundRectIcon size={16} />{t("slides.shape.roundRect")}</DropdownMenu.Item>
+				<DropdownMenu.Item className={menuItemClass} onSelect={() => props.onInsert("ellipse")}><EllipseIcon size={16} />{t("slides.shape.ellipse")}</DropdownMenu.Item>
+				<DropdownMenu.Item className={menuItemClass} onSelect={() => props.onInsert("triangle")}><TriangleIcon size={16} />{t("slides.shape.triangle")}</DropdownMenu.Item>
+				<DropdownMenu.Item className={menuItemClass} onSelect={() => props.onInsert("arrow")}><ArrowShapeIcon size={16} />{t("slides.shape.arrow")}</DropdownMenu.Item>
+			</Menu>
+			<ToolButton label={t("slides.shape.line")} onClick={() => props.onInsert("line")}><LineIcon size={16} /></ToolButton>
 			<Divider />
 			{selection.length > 0 ? (
 				<>
@@ -180,12 +197,16 @@ export function SlidesToolbar(props: SlidesToolbarProps) {
 					{hasText && (
 						<>
 							<Divider />
+							<Select value={FONT_FAMILIES.some((font) => font.value === (style.fontFamily ?? props.themeFont)) ? style.fontFamily ?? props.themeFont : ""} onChange={(event) => { if (event.target.value) props.onStyle({ fontFamily: event.target.value }); }} aria-label={t("slides.fontFamily")} className="h-8 w-[7.5rem] text-xs" containerClassName="shrink-0">
+								{!FONT_FAMILIES.some((font) => font.value === (style.fontFamily ?? props.themeFont)) && <option value="">{t("slides.fontFamily")}</option>}
+								{FONT_FAMILIES.map((font) => <option key={font.label} value={font.value}>{font.label}</option>)}
+							</Select>
 							<Select value={String(style.fontSize ?? 20)} onChange={(event) => props.onStyle({ fontSize: Number(event.target.value) })} aria-label={t("slides.fontSize")} className="h-8 w-[4.25rem] text-xs" containerClassName="shrink-0">
 								{[...new Set([...FONT_SIZES, style.fontSize ?? 20])].sort((a, b) => a - b).map((size) => <option key={size} value={String(size)}>{size}</option>)}
 							</Select>
 							<ToolButton label={t("slides.bold")} active={editing ? undefined : !!style.bold} onClick={() => (editing ? props.onExec("bold") : props.onStyle({ bold: !style.bold }))}><Bold size={16} /></ToolButton>
 							<ToolButton label={t("slides.italic")} active={editing ? undefined : !!style.italic} onClick={() => (editing ? props.onExec("italic") : props.onStyle({ italic: !style.italic }))}><Italic size={16} /></ToolButton>
-							<ToolButton label={t("slides.underline")} disabled={!editing} onClick={() => props.onExec("underline")}><Underline size={16} /></ToolButton>
+							<ToolButton label={t("slides.underline")} active={editing ? undefined : !!style.underline} onClick={() => (editing ? props.onExec("underline") : props.onStyle({ underline: !style.underline }))}><Underline size={16} /></ToolButton>
 							<ColorButton label={t("slides.textColor")} value={hex(style.color, "#202124")} onChange={(color) => (editing ? props.onExec("foreColor", color) : props.onStyle({ color }, "color"))}><TextColorIcon size={15} /></ColorButton>
 							<ToolButton label={t("slides.bullets")} disabled={!editing} onClick={() => props.onExec("insertUnorderedList")}><List size={16} /></ToolButton>
 							<ToolButton label={t("slides.alignLeft")} active={(style.align ?? "left") === "left"} onClick={() => props.onStyle({ align: "left" })}><AlignLeftIcon size={16} /></ToolButton>
@@ -212,9 +233,12 @@ export function SlidesToolbar(props: SlidesToolbarProps) {
 					<ToolButton label={t("slides.delete")} onClick={props.onDelete}><Trash2 size={16} /></ToolButton>
 				</>
 			) : (
-				<>
+				props.hasSlide && <>
 					<ColorButton label={t("slides.background")} value={hex(props.background, "#ffffff")} onChange={(color) => props.onBackground(color, "background")}><BackgroundIcon size={15} /></ColorButton>
 					<ToolButton label={t("slides.resetBackground")} onClick={() => props.onBackground(undefined)}><span className="text-xs">{t("slides.reset")}</span></ToolButton>
+					<Menu label={t("slides.applyLayout")} trigger={<><LayoutIcon size={16} /><span className="max-sm:hidden">{t("slides.layoutLabel")}</span></>}>
+						{SLIDE_LAYOUTS.map((layout) => <DropdownMenu.Item key={layout} className={menuItemClass} onSelect={() => props.onApplyLayout(layout)}>{t(LAYOUT_LABELS[layout])}</DropdownMenu.Item>)}
+					</Menu>
 					<Menu label={t("slides.themeLabel")} trigger={<><Palette size={16} /><span className="max-sm:hidden">{t("slides.themeLabel")}</span></>}>
 						{(Object.keys(SLIDE_THEMES) as SlideThemeId[]).map((id) => (
 							<DropdownMenu.Item key={id} className={menuItemClass} onSelect={() => props.onTheme(id)}>

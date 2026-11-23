@@ -1,4 +1,5 @@
-import type { Sheet } from "@/lib/office/types";
+import type { CellStyle, Sheet } from "@/lib/office/types";
+import { formatRange } from "@/lib/office/sheets/address";
 import type { RangeCoord } from "@/lib/office/sheets/address";
 import { isError } from "@/lib/office/sheets/formula";
 import type { Workbook } from "@/lib/office/sheets/formula";
@@ -11,6 +12,47 @@ export const ROW_HEADER_WIDTH = 48;
 export const MIN_COL_WIDTH = 24;
 export const ADD_ROWS_STEP = 100;
 export const HISTORY_LIMIT = 100;
+/** Pixels per point at 100% zoom: 10pt text is about 13px. */
+export const PX_PER_PT = 4 / 3;
+export const DEFAULT_FONT_PT = 10;
+export const ZOOM_LEVELS = [0.5, 0.75, 0.9, 1, 1.25, 1.5, 2];
+export const FONT_SIZES = [6, 7, 8, 9, 10, 11, 12, 14, 18, 24, 36];
+/** `value` undefined is the default font (Arial). */
+export const FONT_FAMILIES: { label: string; value: string | undefined }[] = [
+	{ label: "Arial", value: undefined },
+	{ label: "Calibri", value: "Calibri" },
+	{ label: "Comic Sans MS", value: "Comic Sans MS" },
+	{ label: "Courier New", value: "Courier New" },
+	{ label: "Georgia", value: "Georgia" },
+	{ label: "Tahoma", value: "Tahoma" },
+	{ label: "Times New Roman", value: "Times New Roman" },
+	{ label: "Trebuchet MS", value: "Trebuchet MS" },
+	{ label: "Verdana", value: "Verdana" },
+];
+export const MENU_FUNCTIONS = ["SUM", "AVERAGE", "COUNT", "COUNTA", "MAX", "MIN", "IF", "IFERROR", "ROUND", "CONCATENATE", "VLOOKUP", "TODAY"];
+
+/** CSS font stack of a cell. */
+export function cellFontFamily(style: CellStyle | undefined): string {
+	return typeof style?.fontFamily === "string" && style.fontFamily ? `"${style.fontFamily.replace(/["\\]/g, "")}", Arial, Helvetica, sans-serif` : "Arial, Helvetica, sans-serif";
+}
+
+/** Rendered font size in px for a cell at a zoom level. */
+export function cellFontPx(style: CellStyle | undefined, zoom = 1): number {
+	const points = style?.fontSize && style.fontSize > 0 && style.fontSize <= 400 ? style.fontSize : DEFAULT_FONT_PT;
+	return Math.round(points * PX_PER_PT * zoom * 10) / 10;
+}
+
+/** What the Σ menu does with a function: edits the active cell, or writes it below / right of a selected block. */
+export function functionInsertion(range: RangeCoord, name: string, rowCount: number, colCount: number): { kind: "edit"; text: string } | { kind: "write"; row: number; col: number; input: string } {
+	const single = range.start.row === range.end.row && range.start.col === range.end.col;
+	if (single) return { kind: "edit", text: `=${name}(` };
+	const text = formatRange(range);
+	const oneRow = range.start.row === range.end.row;
+	if (oneRow && range.end.col + 1 < colCount) return { kind: "write", row: range.start.row, col: range.end.col + 1, input: `=${name}(${text})` };
+	if (range.end.row + 1 < rowCount) return { kind: "write", row: range.end.row + 1, col: range.start.col, input: `=${name}(${text})` };
+	return { kind: "edit", text: `=${name}(${text})` };
+}
+
 
 /** Grid colors as inline styles: the dark theme remaps palette classes, but a sheet stays a white sheet. */
 export const GRID_COLORS = {
@@ -27,16 +69,18 @@ export const GRID_COLORS = {
 	refHighlight: "#188038",
 };
 
-export function computeLayout(sheet: Sheet, widthOverrides: Record<number, number> = {}): GridLayout {
-	const colWidth = (col: number) => widthOverrides[col] ?? sheet.colWidths?.[String(col)] ?? DEFAULT_COL_WIDTH;
-	const rowHeight = (row: number) => sheet.rowHeights?.[String(row)] ?? DEFAULT_ROW_HEIGHT;
+/** Line positions at a zoom level. Rows in `hiddenRows` (filtered out) get no height. Overrides are unzoomed widths. */
+export function computeLayout(sheet: Sheet, widthOverrides: Record<number, number> = {}, zoom = 1, hiddenRows?: Set<number>): GridLayout {
+	const colWidth = (col: number) => Math.round((widthOverrides[col] ?? sheet.colWidths?.[String(col)] ?? DEFAULT_COL_WIDTH) * zoom);
+	const rowHeight = (row: number) => (hiddenRows?.has(row) ? 0 : Math.round((sheet.rowHeights?.[String(row)] ?? DEFAULT_ROW_HEIGHT) * zoom));
+	const defaultHeight = Math.round(DEFAULT_ROW_HEIGHT * zoom);
 	const colLefts = new Array<number>(sheet.colCount + 1);
 	colLefts[0] = 0;
 	for (let col = 0; col < sheet.colCount; col += 1) colLefts[col + 1] = colLefts[col] + colWidth(col);
 	const rowTops = new Array<number>(sheet.rowCount + 1);
 	rowTops[0] = 0;
-	const custom = !!sheet.rowHeights && Object.keys(sheet.rowHeights).length > 0;
-	for (let row = 0; row < sheet.rowCount; row += 1) rowTops[row + 1] = rowTops[row] + (custom ? rowHeight(row) : DEFAULT_ROW_HEIGHT);
+	const custom = (!!sheet.rowHeights && Object.keys(sheet.rowHeights).length > 0) || !!hiddenRows?.size;
+	for (let row = 0; row < sheet.rowCount; row += 1) rowTops[row + 1] = rowTops[row] + (custom ? rowHeight(row) : defaultHeight);
 	const frozenRows = Math.min(sheet.frozenRows ?? 0, sheet.rowCount);
 	const frozenCols = Math.min(sheet.frozenCols ?? 0, sheet.colCount);
 	return {
@@ -74,8 +118,9 @@ export function visibleWindow(sheet: Sheet, layout: GridLayout, scroll: { top: n
 	const firstCol = Math.max(frozenCols, indexAt(layout.colLefts, scroll.left + layout.frozenWidth) - overscan);
 	const lastCol = Math.min(sheet.colCount - 1, indexAt(layout.colLefts, scroll.left + bodyWidth) + overscan);
 	const rows: number[] = [];
-	for (let row = 0; row < frozenRows; row += 1) rows.push(row);
-	for (let row = firstRow; row <= lastRow; row += 1) rows.push(row);
+	const shown = (row: number) => layout.rowTops[row + 1] > layout.rowTops[row];
+	for (let row = 0; row < frozenRows; row += 1) if (shown(row)) rows.push(row);
+	for (let row = firstRow; row <= lastRow; row += 1) if (shown(row)) rows.push(row);
 	const cols: number[] = [];
 	for (let col = 0; col < frozenCols; col += 1) cols.push(col);
 	for (let col = firstCol; col <= lastCol; col += 1) cols.push(col);

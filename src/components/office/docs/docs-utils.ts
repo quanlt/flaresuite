@@ -22,6 +22,109 @@ export function pageDimensions(page: DocPage | undefined): { width: number; heig
 	};
 }
 
+/* ---------- Editing helpers ---------- */
+
+/** Font sizes (pt) offered by the size box; the +/- buttons step through them. */
+export const FONT_SIZES = [8, 9, 10, 11, 12, 14, 16, 18, 24, 30, 36, 48, 60, 72, 96];
+
+export const MIN_FONT_SIZE = 1;
+export const MAX_FONT_SIZE = 400;
+
+/** The next size up or down from `current`: the neighbouring preset, or one point past the ends of the list. */
+export function stepFontSize(current: number | null, direction: 1 | -1, sizes: number[] = FONT_SIZES): number {
+	const value = current && Number.isFinite(current) ? current : 11;
+	if (direction > 0) {
+		const next = sizes.find((size) => size > value);
+		return Math.min(MAX_FONT_SIZE, next ?? value + 1);
+	}
+	const previous = [...sizes].reverse().find((size) => size < value);
+	return Math.max(MIN_FONT_SIZE, previous ?? value - 1);
+}
+
+/** A font size typed into the size box, or null when it is not a usable number. */
+export function parseFontSize(value: string): number | null {
+	const number = Number(value.trim().replace(",", "."));
+	if (!Number.isFinite(number) || number < MIN_FONT_SIZE || number > MAX_FONT_SIZE) return null;
+	return Math.round(number * 2) / 2;
+}
+
+/** Zoom levels (percent) of the page view. */
+export const ZOOM_LEVELS = [50, 75, 90, 100, 125, 150, 200];
+
+/** Line spacing presets (unitless line-height). */
+export const LINE_HEIGHTS: { value: number; key: "single" | "115" | "150" | "double" }[] = [
+	{ value: 1, key: "single" },
+	{ value: 1.15, key: "115" },
+	{ value: 1.5, key: "150" },
+	{ value: 2, key: "double" },
+];
+
+/** The preset nearest a computed line height (line-height px / font-size px), or null for "normal" and odd values. */
+export function nearestLineHeight(ratio: number | null): number | null {
+	if (ratio === null || !Number.isFinite(ratio)) return null;
+	const match = LINE_HEIGHTS.find((entry) => Math.abs(entry.value - ratio) < 0.04);
+	return match ? match.value : null;
+}
+
+/** Start and end offsets of each occurrence of `query` in `text`, without overlaps. */
+export function findMatches(text: string, query: string, matchCase = false): [number, number][] {
+	if (!query) return [];
+	const haystack = matchCase ? text : text.toLocaleLowerCase();
+	const needle = matchCase ? query : query.toLocaleLowerCase();
+	// Lower-casing can change the length of some characters (e.g. "İ"); fall back to exact matching then.
+	const exact = haystack.length !== text.length || needle.length !== query.length;
+	const source = exact ? text : haystack;
+	const target = exact ? query : needle;
+	const matches: [number, number][] = [];
+	let index = source.indexOf(target);
+	while (index !== -1) {
+		matches.push([index, index + target.length]);
+		index = source.indexOf(target, index + target.length);
+	}
+	return matches;
+}
+
+/**
+ * Changes the letter case of a run of text. Title case capitalizes the first letter of each word; `previous` is
+ * the character before the run, so a word split across formatting (text nodes) is not capitalized twice.
+ */
+export function changeCase(text: string, mode: "lower" | "upper" | "title", previous = ""): string {
+	if (mode === "lower") return text.toLocaleLowerCase();
+	if (mode === "upper") return text.toLocaleUpperCase();
+	let out = "";
+	let before = previous;
+	for (const char of text) {
+		const wordStart = !before || !/[\p{L}\p{N}'’]/u.test(before);
+		out += wordStart ? char.toLocaleUpperCase() : char.toLocaleLowerCase();
+		before = char;
+	}
+	return out;
+}
+
+/** Figures shown by Tools > Word count. */
+export function textStats(text: string): { words: number; characters: number; charactersNoSpaces: number } {
+	return {
+		words: countWords(text),
+		characters: countCharacters(text),
+		charactersNoSpaces: [...text.replace(/\s/g, "")].length,
+	};
+}
+
+/** Today's date as Insert > Date writes it, in the reader's language. */
+export function formatInsertDate(date: Date, locale: string): string {
+	try { return new Intl.DateTimeFormat(locale, { dateStyle: "long" }).format(date); } catch { return date.toDateString(); }
+}
+
+/** Characters offered by Insert > Special characters, by group. */
+export const SPECIAL_CHARACTERS: { key: "symbols" | "punctuation" | "arrows" | "math" | "currency" | "greek"; chars: string }[] = [
+	{ key: "symbols", chars: "©®™§¶†‡•◦‣°℃℉№℗℠✓✔✗✘★☆♠♣♥♦♪♫☎☐☑☒" },
+	{ key: "punctuation", chars: "–—…‘’‚“”„«»‹›¡¿·‐‑′″‰" },
+	{ key: "arrows", chars: "←↑→↓↔↕⇐⇑⇒⇓⇔↩↪↺↻➔➜" },
+	{ key: "math", chars: "±×÷≈≠≤≥∞√∑∏∫∂∆∇∈∉∩∪⊂⊃∧∨¬∀∃∅½⅓⅔¼¾⅛¹²³" },
+	{ key: "currency", chars: "$€£¥₫₹₩₽₺₿¢" },
+	{ key: "greek", chars: "αβγδεζηθικλμνξοπρστυφχψωΓΔΘΛΞΠΣΦΨΩ" },
+];
+
 /* ---------- HTML tree ---------- */
 
 export type HtmlNode =
@@ -370,6 +473,7 @@ export const DOC_CONTENT_CSS = `
 body, .fs-docs-content { font-family: Arial, Helvetica, sans-serif; font-size: 11pt; line-height: 1.5; color: #202124; }
 h1 { font-size: 20pt; font-weight: 400; margin: 20pt 0 6pt; }
 h1[data-title] { font-size: 26pt; margin: 0 0 3pt; }
+p[data-subtitle] { font-size: 15pt; color: #666666; margin: 0 0 16pt; }
 h2 { font-size: 16pt; font-weight: 400; margin: 18pt 0 6pt; }
 h3 { font-size: 14pt; font-weight: 400; color: #434343; margin: 16pt 0 4pt; }
 p { margin: 0 0 6pt; }

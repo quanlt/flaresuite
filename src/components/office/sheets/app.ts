@@ -5,7 +5,8 @@ import { detectDelimiter, parseDelimited, serializeDelimited } from "@/lib/offic
 import { formatCellValue } from "@/lib/office/sheets/format";
 import { evaluateWorkbook, isError } from "@/lib/office/sheets/formula";
 import type { Workbook } from "@/lib/office/sheets/formula";
-import { getSheet, sheetFromRows, usedBounds } from "@/lib/office/sheets/operations";
+import { mergeAt, sheetMerges } from "@/lib/office/sheets/merge";
+import { getSheet, normalizeLinkUrl, sheetFromRows, usedBounds } from "@/lib/office/sheets/operations";
 import type { OfficeAppClient } from "../office-types";
 import { downloadBlob, readFileText, safeFileName, stripExtension } from "../office-client-utils";
 
@@ -124,13 +125,24 @@ export function toSpreadsheetMl(content: SpreadsheetContent): string {
 	const styleId = (style: CellStyle | undefined) => {
 		if (!style) return null;
 		const parts: string[] = [];
-		if (style.bold || style.italic || style.underline || style.strike || style.color) {
-			parts.push(`<Font${style.bold ? ' ss:Bold="1"' : ""}${style.italic ? ' ss:Italic="1"' : ""}${style.underline ? ' ss:Underline="Single"' : ""}${style.strike ? ' ss:StrikeThrough="1"' : ""}${style.color ? ` ss:Color="${xml(style.color)}"` : ""}/>`);
+		if (style.bold || style.italic || style.underline || style.strike || style.color || style.fontSize || style.fontFamily) {
+			parts.push(`<Font${style.fontFamily ? ` ss:FontName="${xml(String(style.fontFamily))}"` : ""}${style.fontSize ? ` ss:Size="${Number(style.fontSize) || 10}"` : ""}${style.bold ? ' ss:Bold="1"' : ""}${style.italic ? ' ss:Italic="1"' : ""}${style.underline ? ' ss:Underline="Single"' : ""}${style.strike ? ' ss:StrikeThrough="1"' : ""}${style.color ? ` ss:Color="${xml(style.color)}"` : ""}/>`);
 		}
 		if (style.fill) parts.push(`<Interior ss:Color="${xml(style.fill)}" ss:Pattern="Solid"/>`);
-		if (style.align || style.wrap) parts.push(`<Alignment${style.align ? ` ss:Horizontal="${style.align === "left" ? "Left" : style.align === "center" ? "Center" : "Right"}"` : ""}${style.wrap ? ' ss:WrapText="1"' : ""}/>`);
+		const valign = style.valign === "top" ? "Top" : style.valign === "bottom" ? "Bottom" : style.valign === "middle" ? "Center" : null;
+		if (style.align || style.wrap || valign) parts.push(`<Alignment${style.align ? ` ss:Horizontal="${style.align === "left" ? "Left" : style.align === "center" ? "Center" : "Right"}"` : ""}${valign ? ` ss:Vertical="${valign}"` : ""}${style.wrap ? ' ss:WrapText="1"' : ""}/>`);
+		if (style.borders) {
+			const sides = (["top", "right", "bottom", "left"] as const).flatMap((side) => {
+				const border = style.borders?.[side];
+				if (!border) return [];
+				const position = side === "top" ? "Top" : side === "right" ? "Right" : side === "bottom" ? "Bottom" : "Left";
+				const line = border.style === "dashed" ? "Dash" : border.style === "dotted" ? "Dot" : "Continuous";
+				return [`<Border ss:Position="${position}" ss:LineStyle="${line}" ss:Weight="${border.style === "thick" ? 2 : 1}"${border.color ? ` ss:Color="${xml(border.color)}"` : ""}/>`];
+			});
+			if (sides.length) parts.push(`<Borders>${sides.join("")}</Borders>`);
+		}
 		const decimals = "0".repeat(Math.max(0, Math.min(10, style.decimals ?? 2)));
-		const formats: Record<string, string> = { number: `#,##0${decimals ? `.${decimals}` : ""}`, percent: `0${decimals ? `.${decimals}` : ""}%`, currency: `"$"#,##0${decimals ? `.${decimals}` : ""}`, date: "yyyy-mm-dd" };
+		const formats: Record<string, string> = { number: `#,##0${decimals ? `.${decimals}` : ""}`, percent: `0${decimals ? `.${decimals}` : ""}%`, currency: `"$"#,##0${decimals ? `.${decimals}` : ""}`, date: "yyyy-mm-dd", time: "hh:mm:ss", text: "@" };
 		if (style.format && formats[style.format]) parts.push(`<NumberFormat ss:Format="${xml(formats[style.format])}"/>`);
 		if (!parts.length) return null;
 		const body = parts.join("");
@@ -138,7 +150,11 @@ export function toSpreadsheetMl(content: SpreadsheetContent): string {
 		return styles.get(body)!;
 	};
 	const sheetXml = content.sheets.map((sheet) => {
-		const { lastRow, lastCol } = usedBounds(sheet);
+		const merges = sheetMerges(sheet);
+		const used = usedBounds(sheet);
+		// Merged or styled cells count as used too, so their formatting is exported.
+		const lastRow = Math.max(used.lastRow, ...merges.map((merge) => merge.end.row));
+		const lastCol = Math.max(used.lastCol, ...merges.map((merge) => merge.end.col));
 		const columns: string[] = [];
 		for (let col = 0; col <= lastCol; col += 1) {
 			const width = sheet.colWidths?.[String(col)];
@@ -148,16 +164,20 @@ export function toSpreadsheetMl(content: SpreadsheetContent): string {
 		for (let row = 0; row <= lastRow; row += 1) {
 			const cells: string[] = [];
 			for (let col = 0; col <= lastCol; col += 1) {
+				const merge = mergeAt(merges, row, col);
+				if (merge && (merge.start.row !== row || merge.start.col !== col)) continue;
 				const cell = sheet.cells[cellAddress(row, col)];
 				const value = workbook.getValue(sheet.id, row, col);
 				const id = styleId(cell?.style);
+				const link = cell?.link ? normalizeLinkUrl(cell.link) : null;
+				const attributes = `ss:Index="${col + 1}"${id ? ` ss:StyleID="${id}"` : ""}${merge && merge.end.col > col ? ` ss:MergeAcross="${merge.end.col - col}"` : ""}${merge && merge.end.row > row ? ` ss:MergeDown="${merge.end.row - row}"` : ""}${link ? ` ss:HRef="${xml(link)}"` : ""}`;
 				if (value === null || value === "") {
-					if (id) cells.push(`<Cell ss:Index="${col + 1}" ss:StyleID="${id}"/>`);
+					if (id || merge) cells.push(`<Cell ${attributes}/>`);
 					continue;
 				}
 				const type = isError(value) ? "Error" : typeof value === "number" ? "Number" : typeof value === "boolean" ? "Boolean" : "String";
 				const text = isError(value) ? value.code : typeof value === "boolean" ? (value ? "1" : "0") : String(value);
-				cells.push(`<Cell ss:Index="${col + 1}"${id ? ` ss:StyleID="${id}"` : ""}><Data ss:Type="${type}">${xml(text)}</Data></Cell>`);
+				cells.push(`<Cell ${attributes}><Data ss:Type="${type}">${xml(text)}</Data></Cell>`);
 			}
 			rows.push(`<Row ss:Index="${row + 1}">${cells.join("")}</Row>`);
 		}

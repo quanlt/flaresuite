@@ -7,7 +7,7 @@ import { SLIDE_HEIGHT, SLIDE_WIDTH } from "@/lib/office/utils";
 import type { PresentationContent, SlideElement } from "@/lib/office/types";
 import { sanitizeOfficeHtml } from "../sanitize";
 import { ElementSurface, placeholderKind, ScaledSlide, SlideCanvas } from "./slide-view";
-import { applyResize, boundsOf, computeSnap, elementBoxStyle, rotationFromPointer } from "./slides-utils";
+import { applyResize, boundsOf, computeSnap, elementBoxStyle, hasTextBody, rotationFromPointer } from "./slides-utils";
 import type { Box, ResizeHandle, SlideTheme, SnapGuide } from "./slides-types";
 
 const HANDLES: ResizeHandle[] = ["nw", "n", "ne", "e", "se", "s", "sw", "w"];
@@ -170,7 +170,7 @@ export function SlidesCanvas(props: CanvasProps) {
 									key={element.id}
 									data-element-id={element.id}
 									onPointerDown={(event) => onElementPointerDown(event, element)}
-									onDoubleClick={(event) => { if (element.type === "text" || element.type === "rect" || element.type === "ellipse") { event.stopPropagation(); props.onStartEdit(element.id); } }}
+									onDoubleClick={(event) => { if (hasTextBody(element.type)) { event.stopPropagation(); props.onStartEdit(element.id); } }}
 									style={{ ...(elementBoxStyle(element) as CSSProperties), cursor: editing ? "text" : "move", outline: isSelected || editing ? `${2 / scale}px solid ${SELECTION_COLOR}` : undefined, outlineOffset: 0 }}
 								>
 									<ElementSurface element={element} theme={theme} hint={editing ? undefined : hint(element)}>

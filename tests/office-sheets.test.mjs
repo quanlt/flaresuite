@@ -17,6 +17,12 @@ await build({
 			`export * from "./src/lib/office/sheets/format.ts";`,
 			`export * from "./src/lib/office/sheets/csv.ts";`,
 			`export * from "./src/lib/office/sheets/operations.ts";`,
+			`export * from "./src/lib/office/sheets/merge.ts";`,
+			`export * from "./src/lib/office/sheets/borders.ts";`,
+			`export * from "./src/lib/office/sheets/find.ts";`,
+			`export * from "./src/lib/office/sheets/data.ts";`,
+			`export { toSpreadsheetMl, contentFromDelimited } from "./src/components/office/sheets/app.ts";`,
+			`export { validateOfficeContent, parseEnvelope, createEnvelope } from "./src/lib/office/utils.ts";`,
 		].join("\n"),
 		resolveDir: root,
 		sourcefile: "office-sheets-entry.ts",
@@ -356,4 +362,162 @@ test("sheet management helpers", () => {
 	assert.equal(imported.cells.A1.input, "a");
 	assert.equal(imported.cells.A2.input, "1");
 	assert.deepEqual(S.usedBounds(imported), { lastRow: 1, lastCol: 1 });
+});
+
+/* ---------------- editor features: formats, merges, borders, find, data tools ---------------- */
+
+const range = (text) => S.parseRange(text);
+
+test("time format shows the time of day of a serial", () => {
+	assert.equal(S.formatCellValue(0.5, { format: "time" }).text, "12:00:00");
+	assert.equal(S.formatCellValue(45000.75, { format: "time" }).text, "18:00:00");
+});
+
+test("merging keeps the top-left value, replaces touched merges and unmerges", () => {
+	let content = workbook({ Sheet1: { A1: "top", B1: "gone", A2: "gone too" } });
+	content = S.mergeCells(content, "s1", range("A1:B2"));
+	const sheet = content.sheets[0];
+	assert.deepEqual(sheet.merges, ["A1:B2"]);
+	assert.equal(sheet.cells.A1.input, "top");
+	assert.equal(sheet.cells.B1, undefined);
+	assert.equal(sheet.cells.A2, undefined);
+	assert.deepEqual(S.mergeAt(S.sheetMerges(sheet), 1, 1), range("A1:B2"));
+	assert.deepEqual(S.expandToMerges(S.sheetMerges(sheet), range("B2:C3")), range("A1:C3"));
+	const rows = S.mergeCells(content, "s1", range("A1:C2"), "horizontal");
+	assert.deepEqual(rows.sheets[0].merges, ["A1:C1", "A2:C2"]);
+	assert.equal(S.unmergeCells(content, "s1", range("B2")).sheets[0].merges, undefined);
+});
+
+test("invalid or overlapping stored merges are ignored", () => {
+	const sheet = { id: "s1", name: "S", rowCount: 10, colCount: 5, cells: {}, merges: ["A1:B2", "B2:C3", "nonsense", "A5", "A1:Z1"] };
+	assert.deepEqual(S.sheetMerges(sheet), [range("A1:B2")]);
+});
+
+test("inserting and deleting lines moves merges and the filter", () => {
+	let content = workbook({ Sheet1: { A1: "h" } });
+	content = S.mergeCells(content, "s1", range("B2:C3"));
+	content = S.createFilter(content, "s1", range("A1:D10"));
+	content = S.setFilterHidden(content, "s1", 3, ["x"]);
+	let moved = S.insertLines(content, "s1", "row", 0, 2);
+	assert.deepEqual(moved.sheets[0].merges, ["B4:C5"]);
+	assert.equal(moved.sheets[0].filter.range, "A3:D12");
+	moved = S.insertLines(content, "s1", "col", 0, 1);
+	assert.deepEqual(moved.sheets[0].merges, ["C2:D3"]);
+	assert.deepEqual(moved.sheets[0].filter.hidden, { 4: ["x"] });
+	const deleted = S.deleteLines(content, "s1", "row", 1, 1);
+	assert.deepEqual(deleted.sheets[0].merges, ["B2:C2"]);
+	assert.equal(deleted.sheets[0].filter.range, "A1:D9");
+	assert.equal(S.deleteLines(content, "s1", "row", 1, 2).sheets[0].merges, undefined);
+});
+
+test("borders: all, outer and none", () => {
+	let content = workbook({ Sheet1: {} });
+	content = S.applyBorders(content, "s1", range("A1:B2"), "all");
+	const cells = content.sheets[0].cells;
+	assert.deepEqual(Object.keys(cells.A1.style.borders).sort(), ["left", "top"]);
+	assert.deepEqual(Object.keys(cells.B2.style.borders).sort(), ["bottom", "left", "right", "top"]);
+	assert.equal(cells.A1.style.borders.top.color, "#000000");
+	const outer = S.applyBorders(workbook({ Sheet1: {} }), "s1", range("A1:C3"), "outer", { color: "#ff0000", style: "dashed" });
+	assert.equal(outer.sheets[0].cells.B2, undefined);
+	assert.deepEqual(outer.sheets[0].cells.B1.style.borders, { top: { color: "#ff0000", style: "dashed" } });
+	const cleared = S.applyBorders(content, "s1", range("A1:B2"), "none");
+	assert.deepEqual(cleared.sheets[0].cells, {});
+});
+
+test("find matches values, formulas on request, and replace leaves formulas alone", () => {
+	const content = workbook({ Sheet1: { A1: "Apple pie", A2: "apple", B1: "=UPPER(A2)" }, Two: { C3: "pineapple" } });
+	const shown = (sheetId, row, col) => S.valueToText(S.evaluateWorkbook(content).getValue(sheetId, row, col));
+	assert.deepEqual(S.findCells(content, "apple", {}, shown).map((m) => `${m.sheetId}:${m.row}:${m.col}`), ["s1:0:0", "s1:0:1", "s1:1:0", "s2:2:2"]);
+	assert.equal(S.findCells(content, "apple", { matchCase: true, sheetId: "s1" }, shown).length, 1);
+	assert.equal(S.findCells(content, "apple", { wholeCell: true }, shown).length, 2);
+	assert.equal(S.findCells(content, "upper", { formulas: true }, shown).length, 1);
+	assert.equal(S.findCells(content, "(", { regex: true }, shown).length, 0);
+	const replaced = S.replaceInCells(content, "apple", "pear", {});
+	assert.equal(replaced.count, 3);
+	assert.equal(replaced.content.sheets[0].cells.A1.input, "pear pie");
+	assert.equal(replaced.content.sheets[0].cells.B1.input, "=UPPER(A2)");
+	assert.equal(replaced.content.sheets[1].cells.C3.input, "pinepear");
+	const one = S.replaceInCells(content, "apple", "x", {}, [{ sheetId: "s1", row: 1, col: 0 }]);
+	assert.equal(one.count, 1);
+	assert.equal(one.content.sheets[0].cells.A1.input, "Apple pie");
+	assert.equal(S.replaceInCells(content, "$", "x", {}).count, 0);
+});
+
+test("remove duplicates keeps the first row and moves the rest up", () => {
+	const content = workbook({ Sheet1: { A1: "Name", A2: "a", B2: "1", A3: "A", B3: "1", A4: "b", B4: "2", C4: "=B4*2" } });
+	const text = (row, col) => content.sheets[0].cells[S.cellAddress(row, col)]?.input ?? "";
+	const result = S.removeDuplicateRows(content, "s1", range("A1:C4"), text, { hasHeader: true });
+	assert.equal(result.removed, 1);
+	const cells = result.content.sheets[0].cells;
+	assert.equal(cells.A1.input, "Name");
+	assert.equal(cells.A3.input, "b");
+	assert.equal(cells.C3.input, "=B3*2");
+	assert.equal(cells.A4, undefined);
+	assert.equal(S.removeDuplicateRows(content, "s1", range("A1:C4"), text, { hasHeader: true, matchCase: true }).removed, 0);
+});
+
+test("trim whitespace", () => {
+	const result = S.trimWhitespace(workbook({ Sheet1: { A1: "  a   b ", A2: "=  1", A3: "ok" } }), "s1", range("A1:A3"));
+	assert.equal(result.changed, 1);
+	assert.equal(result.content.sheets[0].cells.A1.input, "a b");
+	assert.equal(result.content.sheets[0].cells.A2.input, "=  1");
+});
+
+test("filter hides rows by value and grows with the data", () => {
+	let content = workbook({ Sheet1: { A1: "Fruit", A2: "apple", A3: "pear", A4: "apple", A5: "" , A6: "fig" } });
+	content = S.createFilter(content, "s1", range("A1:A3"));
+	content = S.setFilterHidden(content, "s1", 0, ["apple"]);
+	const sheet = content.sheets[0];
+	const text = (row, col) => sheet.cells[S.cellAddress(row, col)]?.input ?? "";
+	assert.deepEqual(S.filterRange(sheet), range("A1:A6"));
+	assert.deepEqual([...S.filterHiddenRows(sheet, text)].sort(), [1, 3]);
+	assert.deepEqual(S.filterValues(sheet, 0, text), ["apple", "fig", "pear", ""]);
+	assert.equal(S.setFilterHidden(content, "s1", 0, []).sheets[0].filter.hidden, undefined);
+	assert.equal(S.removeFilter(content, "s1").sheets[0].filter, undefined);
+});
+
+test("links: only http(s) and mailto, kept through clearing styles but not values", () => {
+	assert.equal(S.normalizeLinkUrl("example.com/a"), "https://example.com/a");
+	assert.equal(S.normalizeLinkUrl("me@example.com"), "mailto:me@example.com");
+	assert.equal(S.normalizeLinkUrl("javascript:alert(1)"), null);
+	assert.equal(S.normalizeLinkUrl("data:text/html,x"), null);
+	assert.equal(S.normalizeLinkUrl("not a url"), null);
+	let content = S.setCellLink(workbook({ Sheet1: {} }), "s1", 0, 0, "https://example.com/", "Site");
+	assert.deepEqual(content.sheets[0].cells.A1, { input: "Site", link: "https://example.com/" });
+	content = S.applyStyle(content, "s1", range("A1"), { bold: true });
+	assert.equal(content.sheets[0].cells.A1.link, "https://example.com/");
+	const block = S.copyBlock(content.sheets[0], range("A1"));
+	assert.equal(S.pasteBlock(content, "s1", range("B1"), block).content.sheets[0].cells.B1.link, "https://example.com/");
+	assert.equal(S.clearRange(content, "s1", range("A1")).sheets[0].cells.A1.link, undefined);
+});
+
+test("new cell and sheet properties survive a save round trip and the Excel export", () => {
+	let content = workbook({ Sheet1: { A1: "Title", A2: "=1/24", B3: "TRUE" } });
+	content = S.mergeCells(content, "s1", range("A1:C1"));
+	content = S.applyBorders(content, "s1", range("A2:B3"), "outer", { style: "thick", color: "#ff0000" });
+	content = S.applyStyle(content, "s1", range("A2"), { format: "time", valign: "top", fontSize: 14, fontFamily: "Georgia", clip: true });
+	content = S.applyStyle(content, "s1", range("B3"), { checkbox: true });
+	content = S.setCellLink(content, "s1", 3, 0, "https://example.com/", "Site");
+	content = S.createFilter(content, "s1", range("A2:B4"));
+	content.sheets[0].hideGridlines = true;
+	assert.equal(S.validateOfficeContent("spreadsheet", content), null);
+	const saved = S.parseEnvelope("spreadsheet", JSON.stringify(S.createEnvelope("spreadsheet", content, 3)));
+	assert.deepEqual(saved.content, content);
+	const xml = S.toSpreadsheetMl(content);
+	assert.match(xml, /ss:MergeAcross="2"/);
+	assert.match(xml, /<Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="2" ss:Color="#ff0000"\/>/);
+	assert.match(xml, /ss:FontName="Georgia" ss:Size="14"/);
+	assert.match(xml, /ss:Vertical="Top"/);
+	assert.match(xml, /ss:Format="hh:mm:ss"/);
+	assert.match(xml, /ss:HRef="https:\/\/example.com\/"/);
+	assert.match(xml, /<Data ss:Type="Boolean">1<\/Data>/);
+	assert.doesNotMatch(xml, /ss:Index="2"[^>]*><Data ss:Type="String">/);
+});
+
+test("documents saved before these features still load and export", () => {
+	const old = { sheets: [{ id: "s1", name: "Old", rowCount: 10, colCount: 5, cells: { A1: { input: "1", style: { bold: true, wrap: true, format: "currency" } } }, frozenRows: 1 }], activeSheetId: "s1" };
+	assert.equal(S.validateOfficeContent("spreadsheet", old), null);
+	assert.deepEqual(S.sheetMerges(old.sheets[0]), []);
+	assert.equal(S.filterRange(old.sheets[0]), null);
+	assert.match(S.toSpreadsheetMl(old), /<Data ss:Type="Number">1<\/Data>/);
 });

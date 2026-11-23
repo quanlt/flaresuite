@@ -17,6 +17,14 @@ function formatDate(value: Scalar): string | null {
 	return null;
 }
 
+/** "13:05:09" for the time-of-day part of a date serial. */
+export function formatTime(value: number): string {
+	const fraction = value - Math.floor(value);
+	const seconds = Math.round(fraction * 86_400) % 86_400;
+	const pad = (part: number) => String(part).padStart(2, "0");
+	return `${pad(Math.floor(seconds / 3600))}:${pad(Math.floor((seconds % 3600) / 60))}:${pad(seconds % 60)}`;
+}
+
 /** The text a cell shows for its computed value and style, and how it lines up by default. */
 export function formatCellValue(value: Scalar, style: CellStyle | undefined, locale = "en-US", currency = "USD"): DisplayValue {
 	const explicit = style?.align;
@@ -39,6 +47,7 @@ export function formatCellValue(value: Scalar, style: CellStyle | undefined, loc
 		case "percent": text = `${(value * 100).toLocaleString(locale, { minimumFractionDigits: decimals, maximumFractionDigits: decimals })}%`; break;
 		case "currency": text = value.toLocaleString(locale, { style: "currency", currency, minimumFractionDigits: decimals, maximumFractionDigits: decimals }); break;
 		case "date": text = formatDate(value) ?? formatGeneralNumber(value); break;
+		case "time": text = formatTime(value); break;
 		default: text = style?.decimals !== undefined
 			? value.toLocaleString(locale, { minimumFractionDigits: decimals, maximumFractionDigits: decimals, useGrouping: false })
 			: formatGeneralNumber(value);

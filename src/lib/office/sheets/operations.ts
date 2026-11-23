@@ -14,13 +14,19 @@ export function updateSheet(content: SpreadsheetContent, sheetId: string, update
 	return { ...content, sheets: content.sheets.map((sheet) => (sheet.id === sheetId ? update(sheet) : sheet)) };
 }
 
-const isEmptyStyle = (style: CellStyle | undefined) => !style || Object.values(style).every((value) => value === undefined || value === false);
+const isEmptyValue = (value: unknown): boolean => value === undefined || value === false || (!!value && typeof value === "object" && Object.values(value).every(isEmptyValue));
+const isEmptyStyle = (style: CellStyle | undefined) => !style || Object.values(style).every(isEmptyValue);
 
-function cleanCell(cell: Cell | undefined): Cell | undefined {
+/** Drops empty styles and links; null when nothing is left to store. */
+export function cleanCell(cell: Cell | undefined): Cell | undefined {
 	if (!cell) return undefined;
 	const style = isEmptyStyle(cell.style) ? undefined : cell.style;
-	if (!cell.input && !style) return undefined;
-	return style ? { input: cell.input, style } : { input: cell.input };
+	const link = cell.link || undefined;
+	if (!cell.input && !style && !link) return undefined;
+	const next: Cell = { input: cell.input };
+	if (style) next.style = style;
+	if (link) next.link = link;
+	return next;
 }
 
 /** Grows the sheet so a cell at (row, col) is inside it. */
@@ -53,8 +59,8 @@ export function applyStyle(content: SpreadsheetContent, sheetId: string, range: 
 			const current = cells[address];
 			const changes = typeof patch === "function" ? patch(current?.style ?? {}) : patch;
 			const style: CellStyle = { ...current?.style, ...changes };
-			for (const key of Object.keys(style) as (keyof CellStyle)[]) if (style[key] === undefined) delete style[key];
-			const next = cleanCell({ input: current?.input ?? "", style });
+			for (const key of Object.keys(style) as (keyof CellStyle)[]) if (isEmptyValue(style[key])) delete style[key];
+			const next = cleanCell({ ...current, input: current?.input ?? "", style });
 			if (next) cells[address] = next; else delete cells[address];
 		});
 		return { ...sheet, cells };
@@ -68,7 +74,7 @@ export function clearRange(content: SpreadsheetContent, sheetId: string, range: 
 		forEachCell(range, (row, col) => {
 			const address = cellAddress(row, col);
 			if (!cells[address]) return;
-			const next = styles ? undefined : cleanCell({ ...cells[address], input: "" });
+			const next = styles ? undefined : cleanCell({ ...cells[address], input: "", link: undefined });
 			if (next) cells[address] = next; else delete cells[address];
 		});
 		return { ...sheet, cells };
@@ -76,7 +82,7 @@ export function clearRange(content: SpreadsheetContent, sheetId: string, range: 
 }
 
 /** A block of copied cells: inputs, styles and where they came from (to shift relative references). */
-export type ClipboardBlock = { rows: { input: string; style?: CellStyle }[][]; origin: { row: number; col: number } | null };
+export type ClipboardBlock = { rows: { input: string; style?: CellStyle; link?: string }[][]; origin: { row: number; col: number } | null };
 
 export function copyBlock(sheet: Sheet, range: RangeCoord): ClipboardBlock {
 	const rows: ClipboardBlock["rows"] = [];
@@ -84,7 +90,7 @@ export function copyBlock(sheet: Sheet, range: RangeCoord): ClipboardBlock {
 		const line: ClipboardBlock["rows"][number] = [];
 		for (let col = range.start.col; col <= range.end.col; col += 1) {
 			const cell = sheet.cells[cellAddress(row, col)];
-			line.push({ input: cell?.input ?? "", style: cell?.style });
+			line.push(cell?.link ? { input: cell.input, style: cell.style, link: cell.link } : { input: cell?.input ?? "", style: cell?.style });
 		}
 		rows.push(line);
 	}
@@ -119,7 +125,7 @@ export function pasteBlock(content: SpreadsheetContent, sheetId: string, target:
 				input = shiftFormula(input, row - sourceRow, col - sourceCol);
 			}
 			const address = cellAddress(row, col);
-			const cell = cleanCell({ input, style: block.origin ? source.style : cells[address]?.style });
+			const cell = cleanCell({ input, style: block.origin ? source.style : cells[address]?.style, link: block.origin ? source.link : undefined });
 			if (cell) cells[address] = cell; else delete cells[address];
 		});
 		return ensureSize({ ...sheet, cells }, range.end.row, range.end.col);
@@ -206,3 +212,59 @@ export function usedBounds(sheet: Sheet): { lastRow: number; lastCol: number } {
 	return { lastRow, lastCol };
 }
 
+
+/** A URL a cell may link to: http(s) or mailto. Bare domains get https://. Null for anything else (javascript:, data:). */
+export function normalizeLinkUrl(text: string): string | null {
+	if (typeof text !== "string") return null;
+	const trimmed = text.trim();
+	if (!trimmed || /\s/.test(trimmed)) return null;
+	const candidate = /^[a-z][a-z0-9+.-]*:/i.test(trimmed) ? trimmed : /^[^@/]+@[^@/]+\.[^@/]+$/.test(trimmed) ? `mailto:${trimmed}` : `https://${trimmed}`;
+	try {
+		const url = new URL(candidate);
+		if (url.protocol === "mailto:") return candidate;
+		if ((url.protocol === "http:" || url.protocol === "https:") && url.hostname.includes(".")) return url.href;
+	} catch {
+		return null;
+	}
+	return null;
+}
+
+/** Links a cell (or removes its link with an empty url). `text` replaces its value; an empty cell shows the URL. */
+export function setCellLink(content: SpreadsheetContent, sheetId: string, row: number, col: number, url: string | null, text?: string): SpreadsheetContent {
+	return updateSheet(content, sheetId, (sheet) => {
+		const address = cellAddress(row, col);
+		const cells = { ...sheet.cells };
+		const current = cells[address];
+		const input = text !== undefined && text !== "" ? text : current?.input || (url ?? "");
+		const next = cleanCell({ ...current, input, link: url ?? undefined });
+		if (next) cells[address] = next; else delete cells[address];
+		return ensureSize({ ...sheet, cells }, row, col);
+	});
+}
+
+/** Paste special, format only: copies the block's styles onto the target, tiling like `pasteBlock`; values stay. */
+export function pasteFormats(content: SpreadsheetContent, sheetId: string, target: RangeCoord, block: ClipboardBlock): { content: SpreadsheetContent; range: RangeCoord } {
+	const height = block.rows.length;
+	const width = Math.max(0, ...block.rows.map((line) => line.length));
+	if (!height || !width) return { content, range: target };
+	const fill = height === 1 && width === 1;
+	const start = target.start;
+	const range: RangeCoord = {
+		start,
+		end: {
+			row: Math.min(SPREADSHEET_MAX_ROWS - 1, start.row + (fill ? target.end.row - target.start.row + 1 : height) - 1),
+			col: Math.min(SPREADSHEET_MAX_COLS - 1, start.col + (fill ? target.end.col - target.start.col + 1 : width) - 1),
+		},
+	};
+	const next = updateSheet(content, sheetId, (sheet) => {
+		const cells = { ...sheet.cells };
+		forEachCell(range, (row, col) => {
+			const source = block.rows[(row - start.row) % height]?.[(col - start.col) % width];
+			const address = cellAddress(row, col);
+			const cell = cleanCell({ ...cells[address], input: cells[address]?.input ?? "", style: source?.style });
+			if (cell) cells[address] = cell; else delete cells[address];
+		});
+		return ensureSize({ ...sheet, cells }, range.end.row, range.end.col);
+	});
+	return { content: next, range };
+}
