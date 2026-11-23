@@ -30,6 +30,8 @@ const forwarded = {
 	MANAGED_MAIL: "1",
 	CLOUD_DNS_URL: "https://flaresuite.ai/dashboard/w/ws_1/dns",
 	INBOUND_WEBHOOK_SECRET: "inbound-secret",
+	CLOUD_API_URL: "http://cloud:3000",
+	CLOUD_WORKSPACE_ID: "ws_1",
 };
 
 test("the Node runtime env carries the documented variables, including the signed-header hardening flag", (t) => {

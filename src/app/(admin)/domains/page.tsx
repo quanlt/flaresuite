@@ -21,6 +21,7 @@ import { CheckCircle2, LoaderCircle, Plus } from "@/components/icons";
 import { authFetch } from "@/lib/auth/client";
 import type { DnsAuthRecord, DnsStatusSummary, Domain, DomainDnsCache, DomainDnsView, DomainPreflight, ReceivingProvider, SendingProvider } from "./types";
 import DomainItemCard from "./DomainItemCard";
+import CloudMailPanel from "./CloudMailPanel";
 import { SectionRowSkeleton } from "@/components/page-skeletons";
 import { checkDomain } from "./utils";
 import { confirmMxReplacement, createDomain, isMxConflictError } from "./api";
@@ -281,22 +282,10 @@ export default function DomainsPage() {
         <div>
           <h1 className="text-2xl md:text-3xl font-medium">{t("domains.title")}</h1>
         </div>
-        <section className="rounded-xl border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-950" data-testid="cloud-mail">
-          <h2 className="text-base font-medium">{t("domains.cloudMailTitle")}</h2>
-          <p className="mt-1 text-sm text-neutral-500">{t("domains.cloudMailBody")}</p>
-          {cloudMail.dnsUrl && (
-            <Button asChild className="mt-4">
-              <a href={cloudMail.dnsUrl} target="_blank" rel="noopener noreferrer">{t("domains.cloudMailButton")}</a>
-            </Button>
-          )}
-        </section>
-        <ul className="divide-y divide-neutral-200 rounded-xl border border-neutral-200 dark:divide-neutral-800 dark:border-neutral-800">
-          {(data?.domains ?? []).map((d) => (
-            <li key={d.id} className="flex items-center justify-between px-4 py-3 text-sm">
-              <span className="font-medium">{d.hostname}</span>
-            </li>
-          ))}
-        </ul>
+        <div>
+          <h2 className="text-sm font-medium text-neutral-500">{t("domains.cloudMailTitle")}</h2>
+        </div>
+        <CloudMailPanel />
         <p className="text-sm text-neutral-500">{t("domains.cloudMailMoreDomains")}</p>
       </div>
     );

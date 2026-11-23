@@ -84,6 +84,8 @@ export function createNodeRuntime(): NodeRuntime {
 		// FlareSuite Cloud runs this workspace's mail, and where the customer adds its DNS records.
 		MANAGED_MAIL: optional("MANAGED_MAIL"),
 		CLOUD_DNS_URL: optional("CLOUD_DNS_URL"),
+		CLOUD_API_URL: optional("CLOUD_API_URL"),
+		CLOUD_WORKSPACE_ID: optional("CLOUD_WORKSPACE_ID"),
 		// Marks the runtime for the few places that must behave differently.
 		MAILFLARE_RUNTIME: "node",
 		APP_URL: optional("APP_URL")?.replace(/\/$/, ""),
