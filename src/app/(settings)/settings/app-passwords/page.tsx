@@ -1,7 +1,7 @@
 import { getServerTranslator } from "@/lib/i18n/server";
-import { EmailClientsSettings } from "@/components/settings/email-clients-settings";
+import { AppPasswordSettings } from "@/components/settings/app-password-settings";
 
-export default async function EmailAppsSettingsPage() {
+export default async function AppPasswordsSettingsPage() {
 	const t = await getServerTranslator();
 	return <div className="space-y-8 py-4">
 		<section className="space-y-4">
@@ -10,7 +10,7 @@ export default async function EmailAppsSettingsPage() {
 				<p className="mt-1 text-sm text-neutral-500">{t("settingsPage.appPasswords.description")}</p>
 			</div>
 			<div className="space-y-4 rounded-3xl bg-white p-6">
-				<EmailClientsSettings />
+				<AppPasswordSettings />
 			</div>
 		</section>
 	</div>;

@@ -141,8 +141,8 @@ test("legacy bcrypt keys still authenticate and are upgraded in place", async (t
 test("replacing the stored hash drops a cached verification", async (t) => {
 	const { database, env } = await createFixture(t);
 	const issued = await generateApiKey();
-	insertKey(database, { id: "cached", prefix: issued.prefix, hash: issued.hash, sha256: issued.sha256, kind: "device", scopes: '["jmap"]' });
-	assert.equal((await authenticateApiKeyValue(env, issued.fullKey))?.keyKind, "device");
+	insertKey(database, { id: "cached", prefix: issued.prefix, hash: issued.hash, sha256: issued.sha256, kind: "legacy", scopes: '["jmap"]' });
+	assert.equal((await authenticateApiKeyValue(env, issued.fullKey))?.keyKind, "legacy");
 	database.db.prepare("UPDATE api_keys SET key_sha256 = ? WHERE id = 'cached'").run("f".repeat(64));
 	assert.equal(await authenticateApiKeyValue(env, issued.fullKey), null);
 	database.db.prepare("UPDATE api_keys SET key_sha256 = ? WHERE id = 'cached'").run(issued.sha256);

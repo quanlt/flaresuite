@@ -87,8 +87,6 @@ test("the account switcher uses the same strict check, with no bearer or missing
 const EXEMPT = {
 	"v1/": "API-key bearer surface (authenticateApiKey / authenticateAdminApiKey); browsers never attach the key",
 	"accounts/[id]/mailbox-access/route.ts": "stub that answers 410 and does nothing",
-	"auth/device/route.ts": "mobile sign-in by credentials in the body; DELETE authenticates with a device key",
-	"mobile/push/route.ts": "device key bearer token",
 	"inbound/route.ts": "signed webhook from the relay Worker (INBOUND_WEBHOOK_SECRET)",
 	"inbound/resend/route.ts": "Svix-signed provider webhook",
 	"inbound/ses/route.ts": "SNS endpoint guarded by a secret URL token",

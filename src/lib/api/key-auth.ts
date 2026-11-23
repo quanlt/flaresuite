@@ -5,6 +5,7 @@ import { parseScopes } from "@/lib/api-keys";
 import { findApiKeyForSecret } from "@/lib/api/find-api-key";
 import type { ApiAuthResult } from "@/lib/api/key-auth-types";
 import { ADMIN_API_KEY_SCOPES } from "@/lib/api/scopes";
+import { authenticateAppPassword } from "@/lib/auth/app-passwords";
 
 const LAST_USED_WRITE_INTERVAL_MS = 60_000;
 const ADMIN_SCOPES = new Set<string>(ADMIN_API_KEY_SCOPES);
@@ -38,13 +39,15 @@ export async function authenticateApiKeyValue(env: CloudflareEnv, key: string): 
 }
 
 /**
- * JMAP clients send the key either as a Bearer token or as the password of
- * HTTP Basic auth (the username is ignored; the key identifies the account).
+ * Protocol clients (JMAP, and the IMAP/SMTP mail gateway on behalf of mail apps) send an API key or an app password,
+ * either as a Bearer token or as the password of HTTP Basic auth (the username is ignored; the secret identifies
+ * the account). App passwords live in their own table and only ever carry the `jmap` scope.
  */
 export async function authenticateApiRequest(env: CloudflareEnv, request: Request): Promise<ApiAuthResult | null> {
 	const authorization = request.headers.get("Authorization") ?? "";
-	if (authorization.startsWith("Bearer ")) return authenticateApiKeyValue(env, authorization.slice(7));
-	if (authorization.startsWith("Basic ")) {
+	let secret: string | null = null;
+	if (authorization.startsWith("Bearer ")) secret = authorization.slice(7);
+	else if (authorization.startsWith("Basic ")) {
 		let decoded = "";
 		try {
 			decoded = atob(authorization.slice(6).trim());
@@ -52,9 +55,10 @@ export async function authenticateApiRequest(env: CloudflareEnv, request: Reques
 			return null;
 		}
 		const separator = decoded.indexOf(":");
-		return authenticateApiKeyValue(env, separator >= 0 ? decoded.slice(separator + 1) : decoded);
+		secret = separator >= 0 ? decoded.slice(separator + 1) : decoded;
 	}
-	return null;
+	if (secret === null) return null;
+	return (await authenticateAppPassword(env, secret)) ?? authenticateApiKeyValue(env, secret);
 }
 
 export function hasScope(scopes: string[], required: string): boolean {

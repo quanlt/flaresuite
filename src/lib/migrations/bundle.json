@@ -872,6 +872,17 @@
       "statements": [
         "ALTER TABLE `drive_items` ADD `link_role` text DEFAULT 'view' NOT NULL;"
       ]
+    },
+    {
+      "name": "0094_app_passwords.sql",
+      "statements": [
+        "CREATE TABLE `app_passwords` (\n\t`id` text PRIMARY KEY NOT NULL,\n\t`user_id` text NOT NULL,\n\t`name` text NOT NULL,\n\t`prefix` text NOT NULL,\n\t`password_sha256` text NOT NULL,\n\t`created_at` integer NOT NULL,\n\t`last_used_at` integer,\n\tFOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE cascade\n);",
+        "CREATE INDEX `app_passwords_user_idx` ON `app_passwords` (`user_id`);",
+        "CREATE UNIQUE INDEX `app_passwords_password_sha256_idx` ON `app_passwords` (`password_sha256`);",
+        "INSERT INTO `app_passwords` (`id`, `user_id`, `name`, `prefix`, `password_sha256`, `created_at`, `last_used_at`) SELECT `id`, `user_id`, `name`, `prefix`, `key_sha256`, `created_at`, `last_used_at` FROM `api_keys` WHERE `kind` = 'device' AND `key_sha256` IS NOT NULL;",
+        "DROP TABLE `push_devices`;",
+        "DELETE FROM `api_keys` WHERE `kind` = 'device';"
+      ]
     }
   ]
 }

@@ -305,8 +305,7 @@ export const messageActionUndoClaims = sqliteTable(
 
 export const apiKeys = sqliteTable("api_keys", {
 	id: text("id").primaryKey(),
-	/** `device` keys come from a mobile sign-in (`/api/auth/device`) and are listed under Devices. */
-	kind: text("kind", { enum: ["legacy", "mcp", "device"] }).notNull().default("legacy"),
+	kind: text("kind", { enum: ["legacy", "mcp"] }).notNull().default("legacy"),
 	userId: text("user_id")
 		.notNull()
 		.references(() => users.id, { onDelete: "cascade" }),
@@ -330,6 +329,27 @@ export const apiKeys = sqliteTable("api_keys", {
 		.$defaultFn(() => new Date()),
 	lastUsedAt: timestamp("last_used_at"),
 }, (t) => [index("api_keys_user_idx").on(t.userId), uniqueIndex("api_keys_key_sha256_idx").on(t.keySha256)]);
+
+/**
+ * Passwords for mail apps (Outlook, Apple Mail, Thunderbird) signing in over IMAP/SMTP through the mail gateway, or
+ * JMAP. They are not API keys: they grant mail only (the `jmap` scope), see every mailbox the account can, and are
+ * revoked with the account's sessions.
+ */
+export const appPasswords = sqliteTable("app_passwords", {
+	id: text("id").primaryKey(),
+	userId: text("user_id")
+		.notNull()
+		.references(() => users.id, { onDelete: "cascade" }),
+	name: text("name").notNull(),
+	/** First characters, kept to recognise a password in lists; the rest is only stored hashed. */
+	prefix: text("prefix").notNull(),
+	/** SHA-256 hex of the password (16 random letters, enough entropy for a plain hash). */
+	passwordSha256: text("password_sha256").notNull(),
+	createdAt: timestamp("created_at")
+		.notNull()
+		.$defaultFn(() => new Date()),
+	lastUsedAt: timestamp("last_used_at"),
+}, (t) => [index("app_passwords_user_idx").on(t.userId), uniqueIndex("app_passwords_password_sha256_idx").on(t.passwordSha256)]);
 
 export const messages = sqliteTable(
 	"messages",
@@ -928,36 +948,6 @@ export const sessions = sqliteTable("sessions", {
 		.notNull()
 		.$defaultFn(() => new Date()),
 }, (t) => [index("sessions_user_idx").on(t.userId)]);
-
-/** A native app's push registration (APNs), owned by the device's API key. */
-export const pushDevices = sqliteTable(
-	"push_devices",
-	{
-		id: text("id").primaryKey(),
-		userId: text("user_id")
-			.notNull()
-			.references(() => users.id, { onDelete: "cascade" }),
-		apiKeyId: text("api_key_id")
-			.notNull()
-			.references(() => apiKeys.id, { onDelete: "cascade" }),
-		platform: text("platform", { enum: ["apns"] }).notNull(),
-		token: text("token").notNull(),
-		environment: text("environment", { enum: ["production", "sandbox"] }).notNull().default("production"),
-		topic: text("topic").notNull(),
-		/** Base64 raw P-256 public key; previews are encrypted to it. */
-		publicKey: text("public_key"),
-		previews: bool("previews").notNull().default(true),
-		/** The app's own id for this account; echoed in pushes so a tap opens the right account. */
-		clientRef: text("client_ref"),
-		createdAt: timestamp("created_at").notNull(),
-		updatedAt: timestamp("updated_at").notNull(),
-	},
-	(table) => [
-		uniqueIndex("push_devices_platform_token_user_idx").on(table.platform, table.token, table.userId),
-		index("push_devices_user_idx").on(table.userId),
-		index("push_devices_api_key_idx").on(table.apiKeyId),
-	],
-);
 
 export const pushSubscriptions = sqliteTable(
 	"push_subscriptions",

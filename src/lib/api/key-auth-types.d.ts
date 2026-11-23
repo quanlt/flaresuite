@@ -1,9 +1,9 @@
 import type { users } from "@/db/schema";
 
 export type ApiAuthResult = {
-	/** The API key that authenticated; mobile push registrations hang off it. */
+	/** The API key (or app password) that authenticated. */
 	keyId: string;
-	keyKind: "legacy" | "mcp" | "device";
+	keyKind: "legacy" | "mcp" | "app_password";
 	userId: string;
 	email: string;
 	scopes: string[];

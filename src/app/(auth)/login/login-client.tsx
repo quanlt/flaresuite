@@ -27,7 +27,7 @@ import {
 	submitPasskeyMfa,
 } from "./utils";
 
-export function LoginClient({ adding = false }: { adding?: boolean }) {
+export function LoginClient({ adding = false, email }: { adding?: boolean; email?: string }) {
   const { t } = useLanguage();
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
@@ -278,6 +278,7 @@ export function LoginClient({ adding = false }: { adding?: boolean }) {
             name="email"
             type="email"
             autoComplete="username webauthn"
+            defaultValue={email}
             aria-invalid={error ? true : undefined}
             aria-describedby={error ? "login-error" : undefined}
             required

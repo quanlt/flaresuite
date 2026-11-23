@@ -2,15 +2,15 @@
 
 import { useEffect, useState } from "react";
 import { confirmDestructive } from "@/components/ui/confirm-dialog";
-import { Bell, Check, Copy, Mail, Plus, Smartphone } from "@/components/icons";
+import { Check, Copy, KeyRound, Plus } from "@/components/icons";
 import { useLanguage } from "@/components/language-provider";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { formatUserDate } from "@/lib/time/utils";
-import type { CreatedAppPassword, DeviceList, MailAppServer, MobileDevice } from "./device-settings-types";
-import { appleProfileUrl, createAppPassword, groupPassword, loadDevices, signOutDevice } from "./device-settings-utils";
+import type { AppPassword, AppPasswordList, CreatedAppPassword, MailAppServer } from "./app-password-settings-types";
+import { appleProfileUrl, createAppPassword, groupPassword, loadAppPasswords, revokeAppPassword } from "./app-password-settings-utils";
 
 function CopyRow({ label, value, display }: { label: string; value: string; display?: string }) {
 	const { t } = useLanguage();
@@ -46,7 +46,7 @@ export function MailServerSettings({ server, username, password }: { server: Mai
 	);
 }
 
-function AppPasswordDialog({ open, onClose, onCreated, list }: { open: boolean; onClose: () => void; onCreated: () => void; list: DeviceList | null }) {
+function NewAppPasswordDialog({ open, onClose, onCreated, list }: { open: boolean; onClose: () => void; onCreated: () => void; list: AppPasswordList | null }) {
 	const { t } = useLanguage();
 	const [name, setName] = useState("");
 	const [busy, setBusy] = useState(false);
@@ -81,7 +81,7 @@ function AppPasswordDialog({ open, onClose, onCreated, list }: { open: boolean; 
 						{created.mailServer
 							? <MailServerSettings server={created.mailServer} username={created.username} password={created.password} />
 							: <CopyRow label={t("devices.password")} value={created.password} display={groupPassword(created.password)} />}
-						<p className="text-xs text-neutral-500">{t("devices.appPasswordRevoke")}</p>
+						<p className="text-xs text-neutral-500">{t("appPasswords.revokeNote")}</p>
 						<div className="flex justify-end"><Button onClick={close}>{t("devices.done")}</Button></div>
 					</div>
 				) : (
@@ -103,77 +103,97 @@ function AppPasswordDialog({ open, onClose, onCreated, list }: { open: boolean; 
 	);
 }
 
-/**
- * Settings > Security card listing phones and tablets signed in with the mobile app, and mail apps (Outlook,
- * Apple Mail…) using an app password. Each holds a device key; signing one out revokes it.
- */
-export function DeviceSettings() {
+/** Step-by-step setup for the common mail apps, with the server settings to type when an app asks. */
+function MailAppGuide({ server, username }: { server: MailAppServer; username: string }) {
 	const { t } = useLanguage();
-	const [list, setList] = useState<DeviceList | null>(null);
+	const apps: { title: string; steps: string[] }[] = [
+		{ title: t("mailGuide.outlook"), steps: [t("mailGuide.outlook1"), t("mailGuide.outlook2"), t("mailGuide.outlook3")] },
+		{ title: t("mailGuide.apple"), steps: [t("mailGuide.apple1"), t("mailGuide.apple2")] },
+		{ title: t("mailGuide.thunderbird"), steps: [t("mailGuide.thunderbird1")] },
+		{ title: t("mailGuide.other"), steps: [t("mailGuide.other1")] },
+	];
+	return (
+		<section className="space-y-4" data-testid="mail-app-guide">
+			<div>
+				<h2 className="text-lg font-semibold text-neutral-900">{t("mailGuide.title")}</h2>
+				<p className="mt-1 text-sm text-neutral-500">{t("mailGuide.intro")}</p>
+			</div>
+			<div className="grid gap-3 md:grid-cols-2">
+				{apps.map((app) => (
+					<div key={app.title} className="rounded-2xl border border-neutral-200 p-4">
+						<h3 className="text-sm font-semibold text-neutral-900">{app.title}</h3>
+						<ol className="mt-2 list-decimal space-y-1.5 pl-5 text-sm text-neutral-600">
+							{app.steps.map((step) => <li key={step}>{step}</li>)}
+						</ol>
+					</div>
+				))}
+			</div>
+			<div className="space-y-2">
+				<h3 className="text-sm font-semibold text-neutral-900">{t("mailGuide.settings")}</h3>
+				<MailServerSettings server={server} username={username} />
+			</div>
+		</section>
+	);
+}
+
+/**
+ * Settings > App passwords: the passwords mail apps (Outlook, Apple Mail, Thunderbird) sign in with, and how to
+ * set those apps up. App passwords are not API keys; they only work for mail and are revoked with the sessions.
+ */
+export function AppPasswordSettings() {
+	const { t } = useLanguage();
+	const [list, setList] = useState<AppPasswordList | null>(null);
 	const [error, setError] = useState<string | null>(null);
 	const [busy, setBusy] = useState<string | null>(null);
 	const [creating, setCreating] = useState(false);
 
-	const refresh = () => loadDevices().then(setList).catch((err) => setError(err instanceof Error ? err.message : t("devices.loadFailed")));
+	const refresh = () => loadAppPasswords().then(setList).catch((err) => setError(err instanceof Error ? err.message : t("appPasswords.loadFailed")));
 	useEffect(() => { void refresh(); }, [t]); // eslint-disable-line react-hooks/exhaustive-deps
 
-	async function remove(device: MobileDevice) {
-		if (!await confirmDestructive(t("devices.signOutConfirm", { name: device.name }))) return;
-		setBusy(device.id);
+	async function remove(item: AppPassword) {
+		if (!await confirmDestructive(t("appPasswords.revokeConfirm", { name: item.name }))) return;
+		setBusy(item.id);
 		try {
-			await signOutDevice(device.id);
-			setList((current) => current ? { ...current, devices: current.devices.filter((item) => item.id !== device.id) } : current);
+			await revokeAppPassword(item.id);
+			setList((current) => current ? { ...current, appPasswords: current.appPasswords.filter((entry) => entry.id !== item.id) } : current);
 		} catch (err) {
-			setError(err instanceof Error ? err.message : t("devices.loadFailed"));
+			setError(err instanceof Error ? err.message : t("appPasswords.loadFailed"));
 		} finally {
 			setBusy(null);
 		}
 	}
 
-	if (!list) return <p className="text-sm text-neutral-500">{error ?? t("devices.loading")}</p>;
-	const { devices } = list;
+	if (!list) return <p className="text-sm text-neutral-500">{error ?? t("appPasswords.loading")}</p>;
 
 	return (
-		<div className="space-y-3">
-			{error ? <p className="text-sm text-red-600">{error}</p> : null}
-			<div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-neutral-200 p-4">
-				<div className="flex min-w-0 items-start gap-3">
-					<Mail className="mt-0.5 h-5 w-5 shrink-0 text-neutral-500" />
-					<div className="min-w-0">
-						<p className="text-sm font-medium text-neutral-900">{t("devices.mailAppsTitle")}</p>
-						<p className="text-sm text-neutral-500">{t("devices.mailAppsBody")}</p>
-					</div>
+		<div className="space-y-8">
+			<div className="space-y-3">
+				{error ? <p className="text-sm text-red-600">{error}</p> : null}
+				<div className="flex justify-end">
+					<Button onClick={() => setCreating(true)} data-testid="new-app-password"><Plus className="mr-1 h-4 w-4" />{t("devices.newAppPassword")}</Button>
 				</div>
-				<div className="flex flex-wrap gap-2">
-					{list.mailServer && list.username ? (
-						<Button variant="ghost" size="sm" asChild><a href={appleProfileUrl(list.mailServer.host, list.username)} data-testid="apple-profile-card">{t("devices.appleProfileShort")}</a></Button>
-					) : null}
-					<Button variant="outline" size="sm" onClick={() => setCreating(true)} data-testid="new-app-password"><Plus className="mr-1 h-4 w-4" />{t("devices.newAppPassword")}</Button>
-				</div>
+				{list.appPasswords.length === 0 ? <p className="text-sm text-neutral-500">{t("appPasswords.empty")}</p> : (
+					<ul className="divide-y divide-neutral-100 rounded-2xl bg-neutral-50" data-testid="app-password-list">
+						{list.appPasswords.map((item) => (
+							<li key={item.id} className="flex items-center gap-3 p-4">
+								<KeyRound className="h-5 w-5 shrink-0 text-neutral-500" />
+								<div className="min-w-0 flex-1">
+									<p className="truncate text-sm font-medium text-neutral-900">{item.name}</p>
+									<p className="truncate text-sm text-neutral-500">
+										{t("appPasswords.created", { date: formatUserDate(item.createdAt, { dateStyle: "short" }) })} ·{" "}
+										{item.lastUsedAt ? t("apiKeys.lastUsed", { date: formatUserDate(item.lastUsedAt, { dateStyle: "short" }) }) : t("apiKeys.neverUsed")}
+									</p>
+								</div>
+								<Button variant="outline" size="sm" disabled={busy === item.id} onClick={() => remove(item)}>
+									{t("appPasswords.revoke")}
+								</Button>
+							</li>
+						))}
+					</ul>
+				)}
 			</div>
-			{devices.length === 0 ? <p className="text-sm text-neutral-500">{t("devices.empty")}</p> : (
-				<ul className="divide-y divide-neutral-100 rounded-2xl bg-neutral-50">
-					{devices.map((device) => (
-						<li key={device.id} className="flex items-center gap-3 p-4">
-							<Smartphone className="h-5 w-5 shrink-0 text-neutral-500" />
-							<div className="min-w-0 flex-1">
-								<p className="flex items-center gap-2 truncate text-sm font-medium text-neutral-900">
-									{device.name}
-									{device.pushEnabled ? <Bell className="h-3.5 w-3.5 text-neutral-400" aria-label={t("devices.push")} /> : null}
-								</p>
-								<p className="truncate text-sm text-neutral-500">
-									{t("devices.signedIn", { date: formatUserDate(device.createdAt, { dateStyle: "short" }) })} ·{" "}
-									{device.lastUsedAt ? t("apiKeys.lastUsed", { date: formatUserDate(device.lastUsedAt, { dateStyle: "short" }) }) : t("apiKeys.neverUsed")}
-								</p>
-							</div>
-							<Button variant="outline" size="sm" disabled={busy === device.id} onClick={() => remove(device)}>
-								{t("devices.signOut")}
-							</Button>
-						</li>
-					))}
-				</ul>
-			)}
-			<AppPasswordDialog open={creating} onClose={() => setCreating(false)} onCreated={() => void refresh()} list={list} />
+			{list.mailServer ? <MailAppGuide server={list.mailServer} username={list.username} /> : null}
+			<NewAppPasswordDialog open={creating} onClose={() => setCreating(false)} onCreated={() => void refresh()} list={list} />
 		</div>
 	);
 }

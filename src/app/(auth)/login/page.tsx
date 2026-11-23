@@ -11,8 +11,11 @@ export const dynamic = "force-dynamic";
 
 export const generateMetadata = () => authPageMetadata("auth.signIn");
 
-export default async function LoginPage({ searchParams }: { searchParams: Promise<{ add?: string }> }) {
-	const adding = (await searchParams).add === "1";
+export default async function LoginPage({ searchParams }: { searchParams: Promise<{ add?: string; email?: string }> }) {
+	const params = await searchParams;
+	const adding = params.add === "1";
+	// The control plane's sign-in page sends people here with the address they typed.
+	const email = typeof params.email === "string" && params.email.length <= 254 && params.email.includes("@") ? params.email : undefined;
 	const env = getEnv();
 	if (!(await hasAdminAccount(env))) redirect("/setup");
 	const cookieStore = await cookies();
@@ -21,7 +24,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
 
 	return (
 		<AuthGuard mode="public" allowAuthenticated={adding}>
-			<LoginClient adding={adding} />
+			<LoginClient adding={adding} email={email} />
 		</AuthGuard>
 	);
 }

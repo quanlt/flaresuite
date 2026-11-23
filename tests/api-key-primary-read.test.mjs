@@ -19,6 +19,7 @@ const mocks = {
 	"@/lib/api/find-api-key": "export async function findApiKeyForSecret(db){return {id:'key1',userId:'u1',kind:'api',scopes:'[]',mailboxScopeEnabled:false}}",
 	"@/lib/api-keys": "export const parseScopes=()=>[]",
 	"@/lib/api/scopes": "export const ADMIN_API_KEY_SCOPES=[]",
+	"@/lib/auth/app-passwords": "export async function authenticateAppPassword(){return null}",
 };
 await build({
 	stdin: { contents: "export { authenticateApiKeyValue } from './src/lib/api/key-auth';", resolveDir: root, loader: "ts" },

@@ -10,7 +10,7 @@ const directory = mkdtempSync(join(root, "tests", ".tmp-auth-email-case-"));
 after(() => rmSync(directory, { recursive: true, force: true }));
 await build({
 	stdin: {
-		contents: `export { loginSchema, deviceLoginSchema } from "./src/lib/validators.ts";`,
+		contents: `export { loginSchema } from "./src/lib/validators.ts";`,
 		resolveDir: root,
 		sourcefile: "auth-email-case-entry.ts",
 	},
@@ -23,13 +23,8 @@ await build({
 	packages: "external",
 	logLevel: "silent",
 });
-const { loginSchema, deviceLoginSchema } = await import(pathToFileURL(join(directory, "entry.mjs")).href);
+const { loginSchema } = await import(pathToFileURL(join(directory, "entry.mjs")).href);
 
 test("web login matches the lowercase stored email", () => {
 	assert.equal(loginSchema.parse({ email: "  Alice@Example.COM ", password: "x" }).email, "alice@example.com");
-});
-
-test("device login matches the lowercase stored email", () => {
-	const parsed = deviceLoginSchema.parse({ email: "Alice@Example.COM", password: "x", deviceName: "Phone" });
-	assert.equal(parsed.email, "alice@example.com");
 });

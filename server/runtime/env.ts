@@ -58,7 +58,6 @@ export function createNodeRuntime(): NodeRuntime {
 		IMAGES: undefined as unknown as CloudflareEnv["IMAGES"],
 		WORKER_SELF_REFERENCE: undefined as unknown as CloudflareEnv["WORKER_SELF_REFERENCE"],
 		LOGIN_RATE_LIMIT: openRateLimiter(20, 60),
-		DEVICE_LOGIN_RATE_LIMIT: openRateLimiter(10, 60),
 		AGENT_RATE_LIMIT: openRateLimiter(120, 60),
 		B2_KEY_ID: optional("B2_KEY_ID"),
 		B2_APPLICATION_KEY: optional("B2_APPLICATION_KEY"),
@@ -114,10 +113,6 @@ export function createNodeRuntime(): NodeRuntime {
 		SPAMHAUS_DQS_KEY: optional("SPAMHAUS_DQS_KEY"),
 		ABUSECH_AUTH_KEY: optional("ABUSECH_AUTH_KEY"),
 		SPAM_DOMAIN_AGE_CHECK: optional("SPAM_DOMAIN_AGE_CHECK"),
-		APNS_KEY_ID: optional("APNS_KEY_ID"),
-		APNS_TEAM_ID: optional("APNS_TEAM_ID"),
-		APNS_PRIVATE_KEY: optional("APNS_PRIVATE_KEY"),
-		APNS_RELAY_URL: optional("APNS_RELAY_URL"),
 	} as unknown as CloudflareEnv;
 	const storageEnv = withDatabase(withStorage(env));
 	realtime.bindEnv(storageEnv);

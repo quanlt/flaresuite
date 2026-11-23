@@ -19,10 +19,6 @@ const forwarded = {
 	SPAMHAUS_DQS_KEY: "dqs",
 	ABUSECH_AUTH_KEY: "abuse",
 	SPAM_DOMAIN_AGE_CHECK: "1",
-	APNS_KEY_ID: "kid",
-	APNS_TEAM_ID: "team",
-	APNS_PRIVATE_KEY: "pem",
-	APNS_RELAY_URL: "https://relay.example.com",
 	// FlareSuite Cloud sets these on every hosted workspace.
 	MANAGED_PLAN: "team",
 	MANAGED_SEAT_LIMIT: "15",

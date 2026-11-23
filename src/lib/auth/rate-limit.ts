@@ -10,18 +10,6 @@ function clientRateLimitKey(request: Request): string {
 	return getClientIp(request) ?? "unknown";
 }
 
-/** Mobile sign-ins have their own, stricter budget (they skip Turnstile). */
-export async function allowDeviceLoginAttempt(env: CloudflareEnv, request: Request): Promise<boolean> {
-	const limiter = env.DEVICE_LOGIN_RATE_LIMIT ?? env.LOGIN_RATE_LIMIT;
-	if (!limiter) return true;
-	try {
-		return (await limiter.limit({ key: `device:${clientRateLimitKey(request)}` })).success;
-	} catch (error) {
-		console.warn("Device login rate limiter unavailable", error);
-		return true;
-	}
-}
-
 /** Public booking submissions send mail from the host's address, so they get a per-client budget of their own. */
 export async function allowBookingAttempt(env: CloudflareEnv, request: Request): Promise<boolean> {
 	if (!env.LOGIN_RATE_LIMIT) return true;

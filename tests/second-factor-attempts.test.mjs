@@ -19,7 +19,6 @@ await build({
 			export { createLoginChallenge } from "./src/lib/auth/login-challenge.ts";
 			export { generateTotpSecret, hotp, totpCounter } from "./src/lib/auth/totp.ts";
 			export * as mfaVerify from "./src/app/api/auth/mfa/verify/route.ts";
-			export * as device from "./src/app/api/auth/device/route.ts";
 		`,
 		resolveDir: root,
 		sourcefile: "second-factor-attempts-entry.ts",
@@ -34,7 +33,7 @@ await build({
 	alias: { "next/headers": headersStub, "next/server": "next/server.js", "cloudflare:workers": "./server/runtime/cloudflare-workers.ts" },
 	logLevel: "silent",
 });
-const { SqliteDatabase, applyMigrations, createLoginChallenge, generateTotpSecret, hotp, totpCounter, mfaVerify, device } =
+const { SqliteDatabase, applyMigrations, createLoginChallenge, generateTotpSecret, hotp, totpCounter, mfaVerify } =
 	await import(pathToFileURL(join(directory, "entry.mjs")).href);
 
 // No LOGIN_RATE_LIMIT binding: the per-IP limiter allows everything, as it does for an attacker spread over many IPs.
@@ -63,7 +62,6 @@ async function fixture(t) {
 		wrongCode,
 		challenge: () => createLoginChallenge(env, "alice"),
 		verify: (challengeToken, code) => mfaVerify.POST(post("/api/auth/mfa/verify", { challengeToken, code })),
-		deviceVerify: (challengeToken, code) => device.POST(post("/api/auth/device", { challengeToken, code, deviceName: "Phone" })),
 	};
 }
 
@@ -74,12 +72,10 @@ test("a correct code still signs in after a few wrong ones", async t => {
 	assert.equal((await f.verify(challenge, f.goodCode)).status, 200);
 });
 
-test("wrong codes are limited per account, across challenges and both sign-in routes", async t => {
+test("wrong codes are limited per account, across challenges", async t => {
 	const f = await fixture(t);
-	for (let index = 0; index < 3; index++) assert.equal((await f.verify(await f.challenge(), f.wrongCode)).status, 401);
-	for (let index = 0; index < 2; index++) assert.equal((await f.deviceVerify(await f.challenge(), f.wrongCode)).status, 401);
+	for (let index = 0; index < 5; index++) assert.equal((await f.verify(await f.challenge(), f.wrongCode)).status, 401);
 	assert.equal((await f.verify(await f.challenge(), f.goodCode)).status, 429);
-	assert.equal((await f.deviceVerify(await f.challenge(), f.goodCode)).status, 429);
 });
 
 test("parallel guesses cannot outrun the per-account limit", async t => {

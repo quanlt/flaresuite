@@ -1,5 +1,5 @@
 import { and, eq, gt, ne } from "drizzle-orm";
-import { revokeAllDeviceKeys } from "@/lib/auth/device-keys";
+import { revokeAllAppPasswords } from "@/lib/auth/app-passwords";
 import { newId } from "@/lib/ids";
 import { getDb } from "@/db";
 import { sessions, users } from "@/db/schema";
@@ -81,7 +81,7 @@ export async function deleteSession(env: CloudflareEnv, token: string): Promise<
  */
 export async function deleteUserSessions(env: CloudflareEnv, userId: string, keepToken?: string): Promise<void> {
 	const db = getDb(env);
-	await revokeAllDeviceKeys(env, userId);
+	await revokeAllAppPasswords(env, userId);
 	if (keepToken) {
 		const keepHash = await hashSessionToken(keepToken);
 		await db.delete(sessions).where(and(eq(sessions.userId, userId), ne(sessions.tokenHash, keepHash)));
