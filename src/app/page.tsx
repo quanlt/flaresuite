@@ -7,6 +7,7 @@ import { getServerTranslator } from "@/lib/i18n/server";
 import { getCurrentUser } from "@/lib/auth/cookies";
 import { getEnv } from "@/lib/cloudflare";
 import { LanguageSelector } from "@/components/language-selector";
+import { hasAdminAccount } from "@/lib/auth/setup";
 import { getHomeBranding } from "./home-server-utils";
 import { HomeAuthProvider } from "./home-auth";
 import { HomeHeaderActions } from "./home-header-actions";
@@ -23,12 +24,15 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function HomePage() {
-  const [branding, t, sessionUser] = await Promise.all([
+  const [branding, t, sessionUser, hasAdmin] = await Promise.all([
     getHomeBranding(),
     getServerTranslator(),
     // A session lookup failure must not take down the public landing page.
     getCurrentUser(getEnv()).catch(() => null),
+    // An empty database (before setup) has no tables yet; treat that as "no admin".
+    hasAdminAccount(getEnv()).catch(() => false),
   ]);
+  const canSetup = !hasAdmin;
   // Signed-in users skip the landing page; the inbox restores their last-used mailbox.
   if (sessionUser && !sessionUser.disabled) redirect("/inbox");
 
@@ -73,7 +77,7 @@ export default async function HomePage() {
           <div className="hidden sm:block">
             <LanguageSelector variant="text" />
           </div>
-          <HomeHeaderActions />
+          <HomeHeaderActions canSetup={canSetup} />
         </div>
       </header>
 
@@ -90,7 +94,7 @@ export default async function HomePage() {
             <p className="mt-6 max-w-xl text-lg leading-8 text-neutral-600">
               {t("home.subheadline")}
             </p>
-            <HomeHeroActions />
+            <HomeHeroActions canSetup={canSetup} />
           </div>
 
           <div className="relative min-h-[520px] overflow-hidden rounded-[2rem] border border-neutral-100 shadow-[0_24px_70px_-45px_rgba(30,64,175,0.55)]">

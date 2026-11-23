@@ -18,28 +18,28 @@ export const sidebarItems: SidebarItem[] = [
 export const heroMessages: MailPreview[] = [
 	{
 		icon: MailCheck,
-		sender: "postmaster@northline.dev",
+		sender: "Sarah Chen",
 		subjectKey: "home.msg1.subject",
 		previewKey: "home.msg1.preview",
 		badgeKey: "home.msg1.badge",
 	},
 	{
 		icon: MailCheck,
-		sender: "ops@halcyon.tools",
+		sender: "David Okafor",
 		subjectKey: "home.msg2.subject",
 		previewKey: "home.msg2.preview",
 		badgeKey: "home.msg2.badge",
 	},
 	{
 		icon: MailCheck,
-		sender: "alerts@marketmesh.io",
+		sender: "Maria López",
 		subjectKey: "home.msg3.subject",
 		previewKey: "home.msg3.preview",
 		badgeKey: "home.msg3.badge",
 	},
 	{
 		icon: MailCheck,
-		sender: "admin@mailflare.dev",
+		sender: "Lena Fischer",
 		subjectKey: "home.msg4.subject",
 		previewKey: "home.msg4.preview",
 		badgeKey: "home.msg4.badge",
@@ -58,10 +58,13 @@ export const deliverySignals = [
 	"API keys and webhooks managed beside the inbox",
 ];
 
-export function getHomeActions(isLoggedIn: boolean): HomeAction[] {
+// Account creation is only for the first administrator of a fresh install; once one exists, /setup
+// redirects to /login, so a workspace's own landing page offers sign-in only.
+export function getHomeActions(isLoggedIn: boolean, canSetup = false): HomeAction[] {
 	if (isLoggedIn) {
 		return [{ href: "/inbox", labelKey: "home.dashboard", variant: "default" }];
 	}
+	if (!canSetup) return [{ href: "/login", labelKey: "home.logIn", variant: "default" }];
 
 	return [
 		{ href: "/login", labelKey: "home.logIn", variant: "outline" },

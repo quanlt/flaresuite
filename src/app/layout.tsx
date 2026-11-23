@@ -30,11 +30,12 @@ export const viewport: Viewport = {
 };
 
 export async function generateMetadata(): Promise<Metadata> {
-	const { appName } = await getHomeBranding();
+	const { appName, hasCustomIcon } = await getHomeBranding();
 	return {
 		title: appName,
-		description: "Multi-tenant email on Cloudflare",
-		icons: { icon: "/api/branding/icon", apple: "/apple-touch-icon.png" },
+		// Every workspace is white-labelled, so the description names no product or vendor.
+		description: "Email, calendar and files for your team.",
+		icons: { icon: "/api/branding/icon", apple: hasCustomIcon ? "/api/branding/icon" : "/apple-touch-icon.png" },
 		appleWebApp: {
 			capable: true,
 			title: appName,

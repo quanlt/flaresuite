@@ -10,17 +10,17 @@ const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const outDir = mkdtempSync(join(tmpdir(), "mailflare-pwa-manifest-"));
 after(() => rmSync(outDir, { recursive: true, force: true }));
 
-async function loadManifest() {
+async function loadManifest(branding = { appName: "FlareSuite", hasCustomIcon: false }) {
 	const outfile = join(outDir, "manifest.mjs");
 	await build({
-		entryPoints: [join(root, "src/app/manifest.ts")],
+		entryPoints: [join(root, "src/app/manifest-utils.ts")],
 		bundle: true,
 		format: "esm",
 		platform: "node",
 		outfile,
 		logLevel: "silent",
 	});
-	return (await import(outfile)).default();
+	return (await import(outfile)).buildManifest(branding);
 }
 
 test("manifest has a maskable icon entry that exists in public/", async () => {
@@ -38,6 +38,14 @@ test("manifest keeps the existing any-purpose icons", async () => {
 	const manifest = await loadManifest();
 	const anyIcons = manifest.icons.filter((icon) => !icon.purpose || icon.purpose === "any");
 	assert.deepEqual(anyIcons.map((icon) => icon.src), ["/icon-192.png", "/icon-512.png"]);
+});
+
+test("manifest uses the workspace's name and icon when it is branded", async () => {
+	const manifest = await loadManifest({ appName: "Acme Mail", hasCustomIcon: true });
+	assert.equal(manifest.name, "Acme Mail");
+	assert.equal(manifest.short_name, "Acme Mail");
+	assert.deepEqual(manifest.icons.map((icon) => icon.src), ["/api/branding/icon"]);
+	assert.doesNotMatch(JSON.stringify(manifest), /FlareSuite|Cloudflare/);
 });
 
 test("manifest theme_color matches the light viewport theme colour", async () => {
