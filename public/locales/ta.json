@@ -3179,5 +3179,8 @@
 	"mailGuide.thunderbird1": "Account Settings → Account Actions → Add Mail Account. உங்கள் பெயர், மின்னஞ்சல் முகவரி, ஆப் கடவுச்சொல் ஆகியவற்றை உள்ளிடவும்; மீதியை Thunderbird அமைக்கும்.",
 	"mailGuide.other": "பிற ஆப்கள் (Android-இல் Gmail, Spark…)",
 	"mailGuide.other1": "ஒரு IMAP (\"Other\") கணக்கைச் சேர்த்து கீழே உள்ள அமைப்புகளை உள்ளிடவும்.",
-	"mailGuide.settings": "சர்வர் அமைப்புகள்"
+	"mailGuide.settings": "சர்வர் அமைப்புகள்",
+	"notFound.title": "இந்தப் பக்கம் இல்லை",
+	"notFound.body": "இணைப்பு பழையதாகவோ தவறாகத் தட்டச்சு செய்யப்பட்டதாகவோ இருக்கலாம்.",
+	"notFound.home": "இன்பாக்ஸுக்குச் செல்"
 }

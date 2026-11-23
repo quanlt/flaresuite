@@ -3179,5 +3179,8 @@
 	"mailGuide.thunderbird1": "Account Settings → Account Actions → Add Mail Account. Shigar da sunanka, adireshin imel da kalmar sirri na manhaja; Thunderbird zai saita sauran.",
 	"mailGuide.other": "Wasu manhajoji (Gmail a Android, Spark…)",
 	"mailGuide.other1": "Ƙara asusun IMAP (\"Other\") ka shigar da saitunan da ke ƙasa.",
-	"mailGuide.settings": "Saitunan sabar"
+	"mailGuide.settings": "Saitunan sabar",
+	"notFound.title": "Wannan shafin babu shi",
+	"notFound.body": "Mai yiwuwa hanyar haɗin ta tsufa ko an rubuta ta ba daidai ba.",
+	"notFound.home": "Je zuwa Akwatin saƙo"
 }

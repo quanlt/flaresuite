@@ -3179,5 +3179,8 @@
 	"mailGuide.thunderbird1": "Account Settings → Account Actions → Add Mail Account۔ اپنا نام، ای میل پتہ اور ایپ پاس ورڈ درج کریں؛ باقی Thunderbird خود سیٹ اپ کر لیتا ہے۔",
 	"mailGuide.other": "دیگر ایپس (Android پر Gmail، Spark…)",
 	"mailGuide.other1": "ایک IMAP (\"Other\") اکاؤنٹ شامل کریں اور نیچے دی گئی ترتیبات درج کریں۔",
-	"mailGuide.settings": "سرور کی ترتیبات"
+	"mailGuide.settings": "سرور کی ترتیبات",
+	"notFound.title": "یہ صفحہ موجود نہیں ہے",
+	"notFound.body": "ہو سکتا ہے لنک پرانا ہو یا غلط ٹائپ کیا گیا ہو۔",
+	"notFound.home": "ان باکس پر جائیں"
 }

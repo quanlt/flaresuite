@@ -3195,5 +3195,8 @@
 	"mailGuide.thunderbird1": "Impostazioni account → Azioni account → Aggiungi account di posta. Inserisci il tuo nome, l'indirizzo email e la password per app; Thunderbird configura il resto.",
 	"mailGuide.other": "Altre app (Gmail su Android, Spark…)",
 	"mailGuide.other1": "Aggiungi un account IMAP («Altro») e inserisci le impostazioni qui sotto.",
-	"mailGuide.settings": "Impostazioni del server"
+	"mailGuide.settings": "Impostazioni del server",
+	"notFound.title": "Questa pagina non esiste",
+	"notFound.body": "Il link potrebbe essere vecchio o scritto male.",
+	"notFound.home": "Vai alla Posta in arrivo"
 }

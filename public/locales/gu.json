@@ -3179,5 +3179,8 @@
 	"mailGuide.thunderbird1": "Account Settings → Account Actions → Add Mail Account. તમારું નામ, ઇમેઇલ સરનામું અને ઍપ પાસવર્ડ દાખલ કરો; બાકીનું Thunderbird સેટ કરે છે.",
 	"mailGuide.other": "અન્ય ઍપ (Android પર Gmail, Spark…)",
 	"mailGuide.other1": "એક IMAP (\"Other\") એકાઉન્ટ ઉમેરો અને નીચેની સેટિંગ્સ દાખલ કરો.",
-	"mailGuide.settings": "સર્વર સેટિંગ્સ"
+	"mailGuide.settings": "સર્વર સેટિંગ્સ",
+	"notFound.title": "આ પેજ અસ્તિત્વમાં નથી",
+	"notFound.body": "લિંક જૂની અથવા ખોટી ટાઇપ થયેલી હોઈ શકે છે.",
+	"notFound.home": "ઇનબોક્સ પર જાઓ"
 }

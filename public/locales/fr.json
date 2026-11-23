@@ -3195,5 +3195,8 @@
 	"mailGuide.thunderbird1": "Paramètres des comptes → Gestion des comptes → Ajouter un compte de messagerie. Saisissez votre nom, votre adresse e-mail et le mot de passe d'application ; Thunderbird configure le reste.",
 	"mailGuide.other": "Autres applications (Gmail sur Android, Spark…)",
 	"mailGuide.other1": "Ajoutez un compte IMAP (« Autre ») et saisissez les paramètres ci-dessous.",
-	"mailGuide.settings": "Paramètres du serveur"
+	"mailGuide.settings": "Paramètres du serveur",
+	"notFound.title": "Cette page n'existe pas",
+	"notFound.body": "Le lien est peut-être ancien ou mal saisi.",
+	"notFound.home": "Aller à la boîte de réception"
 }

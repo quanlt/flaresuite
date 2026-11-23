@@ -3179,5 +3179,8 @@
 	"mailGuide.thunderbird1": "Account Settings → Account Actions → Add Mail Account. Adınızı, e-posta adresinizi ve uygulama parolasını girin; Thunderbird gerisini ayarlar.",
 	"mailGuide.other": "Diğer uygulamalar (Android'de Gmail, Spark…)",
 	"mailGuide.other1": "Bir IMAP (\"Diğer\") hesabı ekleyin ve aşağıdaki ayarları girin.",
-	"mailGuide.settings": "Sunucu ayarları"
+	"mailGuide.settings": "Sunucu ayarları",
+	"notFound.title": "Bu sayfa yok",
+	"notFound.body": "Bağlantı eski ya da yanlış yazılmış olabilir.",
+	"notFound.home": "Gelen Kutusu'na git"
 }

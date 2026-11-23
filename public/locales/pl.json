@@ -3211,5 +3211,8 @@
 	"mailGuide.thunderbird1": "Konfiguracja kont → Zarządzaj kontami → Dodaj konto pocztowe. Wpisz swoje imię i nazwisko, adres e-mail i hasło aplikacji; Thunderbird skonfiguruje resztę.",
 	"mailGuide.other": "Inne aplikacje (Gmail na Androidzie, Spark…)",
 	"mailGuide.other1": "Dodaj konto IMAP („Inne”) i wpisz ustawienia poniżej.",
-	"mailGuide.settings": "Ustawienia serwera"
+	"mailGuide.settings": "Ustawienia serwera",
+	"notFound.title": "Ta strona nie istnieje",
+	"notFound.body": "Link może być nieaktualny lub błędnie wpisany.",
+	"notFound.home": "Przejdź do skrzynki odbiorczej"
 }

@@ -3161,5 +3161,8 @@
 	"mailGuide.thunderbird1": "Account Settings → Account Actions → Add Mail Account. Nhập tên, địa chỉ email và mật khẩu ứng dụng; Thunderbird sẽ thiết lập phần còn lại.",
 	"mailGuide.other": "Ứng dụng khác (Gmail trên Android, Spark…)",
 	"mailGuide.other1": "Thêm một tài khoản IMAP (\"Other\") và nhập các cài đặt bên dưới.",
-	"mailGuide.settings": "Cài đặt máy chủ"
+	"mailGuide.settings": "Cài đặt máy chủ",
+	"notFound.title": "Trang này không tồn tại",
+	"notFound.body": "Có thể liên kết đã cũ hoặc bị gõ sai.",
+	"notFound.home": "Về Hộp thư đến"
 }

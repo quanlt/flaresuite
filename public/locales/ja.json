@@ -3161,5 +3161,8 @@
 	"mailGuide.thunderbird1": "アカウント設定 → アカウント操作 → メールアカウントを追加。名前、メールアドレス、アプリパスワードを入力すると、残りは Thunderbird が設定します。",
 	"mailGuide.other": "その他のアプリ（Android の Gmail、Spark…）",
 	"mailGuide.other1": "IMAP（「その他」）アカウントを追加し、下記の設定を入力します。",
-	"mailGuide.settings": "サーバー設定"
+	"mailGuide.settings": "サーバー設定",
+	"notFound.title": "このページは存在しません",
+	"notFound.body": "リンクが古いか、入力が間違っている可能性があります。",
+	"notFound.home": "受信トレイへ"
 }

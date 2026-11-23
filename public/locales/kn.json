@@ -3179,5 +3179,8 @@
 	"mailGuide.thunderbird1": "Account Settings → Account Actions → Add Mail Account. ನಿಮ್ಮ ಹೆಸರು, ಇಮೇಲ್ ವಿಳಾಸ ಮತ್ತು ಆ್ಯಪ್ ಪಾಸ್‌ವರ್ಡ್ ನಮೂದಿಸಿ; ಉಳಿದದ್ದನ್ನು Thunderbird ಹೊಂದಿಸುತ್ತದೆ.",
 	"mailGuide.other": "ಇತರ ಆ್ಯಪ್‌ಗಳು (Android ನಲ್ಲಿ Gmail, Spark…)",
 	"mailGuide.other1": "IMAP (\"Other\") ಖಾತೆಯನ್ನು ಸೇರಿಸಿ ಮತ್ತು ಕೆಳಗಿನ ಸೆಟ್ಟಿಂಗ್‌ಗಳನ್ನು ನಮೂದಿಸಿ.",
-	"mailGuide.settings": "ಸರ್ವರ್ ಸೆಟ್ಟಿಂಗ್‌ಗಳು"
+	"mailGuide.settings": "ಸರ್ವರ್ ಸೆಟ್ಟಿಂಗ್‌ಗಳು",
+	"notFound.title": "ಈ ಪುಟ ಅಸ್ತಿತ್ವದಲ್ಲಿಲ್ಲ",
+	"notFound.body": "ಲಿಂಕ್ ಹಳೆಯದಾಗಿರಬಹುದು ಅಥವಾ ತಪ್ಪಾಗಿ ಟೈಪ್ ಆಗಿರಬಹುದು.",
+	"notFound.home": "ಇನ್‌ಬಾಕ್ಸ್‌ಗೆ ಹೋಗಿ"
 }

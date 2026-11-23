@@ -3175,5 +3175,8 @@
 	"mailGuide.thunderbird1": "Account Settings → Account Actions → Add Mail Account ป้อนชื่อ ที่อยู่อีเมล และรหัสผ่านแอป Thunderbird จะตั้งค่าส่วนที่เหลือให้",
 	"mailGuide.other": "แอปอื่นๆ (Gmail บน Android, Spark…)",
 	"mailGuide.other1": "เพิ่มบัญชี IMAP (\"Other\") แล้วป้อนการตั้งค่าด้านล่าง",
-	"mailGuide.settings": "การตั้งค่าเซิร์ฟเวอร์"
+	"mailGuide.settings": "การตั้งค่าเซิร์ฟเวอร์",
+	"notFound.title": "ไม่มีหน้านี้",
+	"notFound.body": "ลิงก์อาจเก่าหรือพิมพ์ผิด",
+	"notFound.home": "ไปที่กล่องจดหมาย"
 }

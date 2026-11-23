@@ -3179,5 +3179,8 @@
 	"mailGuide.thunderbird1": "Account Settings → Account Actions → Add Mail Account. Weka jina lako, anwani ya barua pepe na nenosiri la programu; Thunderbird itasanidi mengine.",
 	"mailGuide.other": "Programu nyingine (Gmail kwenye Android, Spark…)",
 	"mailGuide.other1": "Ongeza akaunti ya IMAP (\"Other\") na uweke mipangilio iliyo hapa chini.",
-	"mailGuide.settings": "Mipangilio ya seva"
+	"mailGuide.settings": "Mipangilio ya seva",
+	"notFound.title": "Ukurasa huu haupo",
+	"notFound.body": "Huenda kiungo ni cha zamani au kimeandikwa vibaya.",
+	"notFound.home": "Nenda kwenye Kikasha"
 }

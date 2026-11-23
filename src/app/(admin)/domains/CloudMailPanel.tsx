@@ -33,10 +33,10 @@ export function cloudMailState(status: string | null): "verified" | "waiting" | 
 
 const STATE_KEY = { verified: "domains.cloudMailStateVerified", waiting: "domains.cloudMailStateWaiting", failed: "domains.cloudMailStateFailed", none: "domains.cloudMailStateNone" } as const;
 const STATE_CLASS = {
-  verified: "bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300",
-  waiting: "bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300",
-  failed: "bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300",
-  none: "bg-neutral-100 text-neutral-600 dark:bg-neutral-900 dark:text-neutral-400",
+  verified: "bg-emerald-50 text-emerald-700",
+  waiting: "bg-amber-50 text-amber-700",
+  failed: "bg-red-50 text-red-700",
+  none: "bg-neutral-100 text-neutral-600",
 } as const;
 
 function CopyValue({ value }: { value: string }) {
@@ -47,7 +47,7 @@ function CopyValue({ value }: { value: string }) {
       <code className="break-all font-mono text-xs">{value}</code>
       <button
         type="button"
-        className="shrink-0 rounded p-0.5 text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200"
+        className="shrink-0 rounded p-0.5 text-neutral-400 hover:text-neutral-700"
         aria-label={copied ? t("domains.cloudMailCopied") : t("domains.cloudMailCopy")}
         title={copied ? t("domains.cloudMailCopied") : t("domains.cloudMailCopy")}
         onClick={() => {
@@ -115,13 +115,13 @@ export default function CloudMailPanel() {
     check.mutate();
   }, [check]);
 
-  if (isLoading) return <div className="h-40 animate-pulse rounded-xl bg-neutral-100 dark:bg-neutral-900" />;
+  if (isLoading) return <div className="h-40 animate-pulse rounded-xl bg-neutral-100" />;
   if (isError || !data) return <p className="text-sm text-red-600">{t("domains.cloudMailUnavailable")}</p>;
 
   const state = cloudMailState(data.status);
   const domain = data.domain ?? "";
   return (
-    <section className="space-y-5 rounded-xl border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-950" data-testid="cloud-mail">
+    <section className="space-y-5 rounded-xl border border-neutral-200 bg-white p-5" data-testid="cloud-mail">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="text-base font-medium">{domain}</h2>
@@ -131,23 +131,23 @@ export default function CloudMailPanel() {
       </div>
 
       {!data.setUp ? (
-        <p className="text-sm text-neutral-600 dark:text-neutral-400">{t("domains.cloudMailNotSetUp")}</p>
+        <p className="text-sm text-neutral-600">{t("domains.cloudMailNotSetUp")}</p>
       ) : (
         <>
           {state === "verified" ? (
-            <p className="text-sm text-emerald-700 dark:text-emerald-400">{t("domains.cloudMailVerified", { domain })}</p>
+            <p className="text-sm text-emerald-700">{t("domains.cloudMailVerified", { domain })}</p>
           ) : (
-            <div className="space-y-3 rounded-lg bg-neutral-50 p-4 dark:bg-neutral-900">
+            <div className="space-y-3 rounded-lg bg-neutral-50 p-4">
               {data.autoConnect && data.providerName ? (
                 <>
-                  <p className="text-sm text-neutral-600 dark:text-neutral-400">{t("domains.cloudMailAutoHint", { provider: data.providerName })}</p>
+                  <p className="text-sm text-neutral-600">{t("domains.cloudMailAutoHint", { provider: data.providerName })}</p>
                   <Button onClick={() => connect.mutate()} disabled={connect.isPending}>
                     {connect.isPending && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}
                     {t("domains.cloudMailAuto", { provider: data.providerName })}
                   </Button>
                 </>
               ) : (
-                data.providerName && <p className="text-sm text-neutral-600 dark:text-neutral-400">{t("domains.cloudMailManualProvider", { provider: data.providerName })}</p>
+                data.providerName && <p className="text-sm text-neutral-600">{t("domains.cloudMailManualProvider", { provider: data.providerName })}</p>
               )}
               {data.cloudflareUrl && (
                 <div>
@@ -165,7 +165,7 @@ export default function CloudMailPanel() {
             <div className="mt-3 overflow-x-auto">
               <table className="w-full text-left text-sm" data-testid="cloud-mail-records">
                 <thead className="text-xs text-neutral-500">
-                  <tr className="border-b border-neutral-200 dark:border-neutral-800">
+                  <tr className="border-b border-neutral-200">
                     <th className="py-2 pr-3 font-medium">{t("domains.cloudMailType")}</th>
                     <th className="py-2 pr-3 font-medium">{t("domains.cloudMailName")}</th>
                     <th className="py-2 pr-3 font-medium">{t("domains.cloudMailValue")}</th>
@@ -175,10 +175,10 @@ export default function CloudMailPanel() {
                 </thead>
                 <tbody>
                   {data.records.map((record, index) => (
-                    <tr key={`${record.type}-${record.name}-${index}`} className="border-b border-neutral-100 align-top dark:border-neutral-900">
+                    <tr key={`${record.type}-${record.name}-${index}`} className="border-b border-neutral-100 align-top">
                       <td className="py-2.5 pr-3 font-mono text-xs">{record.type}</td>
-                      <td className="py-2.5 pr-3"><CopyValue value={record.name} /></td>
-                      <td className="py-2.5 pr-3"><CopyValue value={record.value} /></td>
+                      <td className="min-w-[8rem] py-2.5 pr-3"><CopyValue value={record.name} /></td>
+                      <td className="min-w-[14rem] py-2.5 pr-3"><CopyValue value={record.value} /></td>
                       <td className="py-2.5 pr-3 text-xs">{record.priority ?? ""}</td>
                       <td className={`py-2.5 text-xs ${record.status === "verified" ? "text-emerald-600" : "text-neutral-500"}`}>
                         {record.status === "verified" ? t("domains.cloudMailFound") : t("domains.cloudMailMissing")}
@@ -197,7 +197,7 @@ export default function CloudMailPanel() {
               <div className="mt-3 overflow-x-auto">
                 <table className="w-full text-left text-sm" data-testid="cloud-mail-app-records">
                   <thead className="text-xs text-neutral-500">
-                    <tr className="border-b border-neutral-200 dark:border-neutral-800">
+                    <tr className="border-b border-neutral-200">
                       <th className="py-2 pr-3 font-medium">{t("domains.cloudMailType")}</th>
                       <th className="py-2 pr-3 font-medium">{t("domains.cloudMailName")}</th>
                       <th className="py-2 pr-3 font-medium">{t("domains.cloudMailValue")}</th>
@@ -206,10 +206,10 @@ export default function CloudMailPanel() {
                   </thead>
                   <tbody>
                     {data.appRecords.map((record) => (
-                      <tr key={`${record.type}-${record.name}`} className="border-b border-neutral-100 align-top dark:border-neutral-900">
+                      <tr key={`${record.type}-${record.name}`} className="border-b border-neutral-100 align-top">
                         <td className="py-2.5 pr-3 font-mono text-xs">{record.type}</td>
-                        <td className="py-2.5 pr-3"><CopyValue value={record.name} /></td>
-                        <td className="py-2.5 pr-3"><CopyValue value={record.value} /></td>
+                        <td className="min-w-[8rem] py-2.5 pr-3"><CopyValue value={record.name} /></td>
+                        <td className="min-w-[14rem] py-2.5 pr-3"><CopyValue value={record.value} /></td>
                         <td className={`py-2.5 text-xs ${record.found ? "text-emerald-600" : "text-neutral-500"}`}>
                           {record.found ? t("domains.cloudMailFound") : t("domains.cloudMail.appsMissing")}
                         </td>
@@ -240,7 +240,7 @@ export default function CloudMailPanel() {
           </div>
         </>
       )}
-      {message && <p className="text-sm text-neutral-600 dark:text-neutral-400" role="status">{message}</p>}
+      {message && <p className="text-sm text-neutral-600" role="status">{message}</p>}
     </section>
   );
 }

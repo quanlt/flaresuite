@@ -3179,5 +3179,8 @@
 	"mailGuide.thunderbird1": "Account Settings → Account Actions → Add Mail Account. نام، نشانی ایمیل و گذرواژهٔ برنامه را وارد کنید؛ Thunderbird بقیه را تنظیم می‌کند.",
 	"mailGuide.other": "برنامه‌های دیگر (Gmail در Android، Spark…)",
 	"mailGuide.other1": "یک حساب IMAP («Other») اضافه کنید و تنظیمات زیر را وارد کنید.",
-	"mailGuide.settings": "تنظیمات سرور"
+	"mailGuide.settings": "تنظیمات سرور",
+	"notFound.title": "این صفحه وجود ندارد",
+	"notFound.body": "ممکن است پیوند قدیمی باشد یا اشتباه تایپ شده باشد.",
+	"notFound.home": "رفتن به صندوق ورودی"
 }

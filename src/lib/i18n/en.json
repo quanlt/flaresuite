@@ -837,7 +837,7 @@
 	"settingsPage.security.changePasswordDescription": "Use at least 8 characters for your new password.",
 	"settingsPage.security.mfa": "Two-factor authentication",
 	"settingsPage.security.mfaDescription": "Require a code from an authenticator app when signing in.",
-	"settingsPage.appPasswords.title": "App Passwords",
+	"settingsPage.appPasswords.title": "App passwords",
 	"settingsPage.appPasswords.description": "Passwords for mail apps such as Outlook, Apple Mail and Thunderbird. Each one only works for mail, and you can revoke it at any time.",
 	"folder.drafts.empty": "No drafts",
 	"compose.pageTitle": "Compose",
@@ -3179,5 +3179,8 @@
 	"mailGuide.thunderbird1": "Account Settings → Account Actions → Add Mail Account. Enter your name, email address and the app password; Thunderbird sets up the rest.",
 	"mailGuide.other": "Other apps (Gmail on Android, Spark…)",
 	"mailGuide.other1": "Add an IMAP (\"Other\") account and enter the settings below.",
-	"mailGuide.settings": "Server settings"
+	"mailGuide.settings": "Server settings",
+	"notFound.title": "This page doesn't exist",
+	"notFound.body": "The link may be old or mistyped.",
+	"notFound.home": "Go to Inbox"
 }

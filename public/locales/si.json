@@ -3179,5 +3179,8 @@
 	"mailGuide.thunderbird1": "Account Settings → Account Actions → Add Mail Account. ඔබගේ නම, ඊමේල් ලිපිනය සහ යෙදුම් මුරපදය ඇතුළු කරන්න; ඉතිරිය Thunderbird සකසයි.",
 	"mailGuide.other": "වෙනත් යෙදුම් (Android මත Gmail, Spark…)",
 	"mailGuide.other1": "IMAP (\"Other\") ගිණුමක් එක් කර පහත සැකසීම් ඇතුළු කරන්න.",
-	"mailGuide.settings": "සේවාදායක සැකසීම්"
+	"mailGuide.settings": "සේවාදායක සැකසීම්",
+	"notFound.title": "මෙම පිටුව නොපවතී",
+	"notFound.body": "සබැඳිය පැරණි හෝ වැරදියට ටයිප් කළ එකක් විය හැක.",
+	"notFound.home": "එන ලිපි වෙත යන්න"
 }

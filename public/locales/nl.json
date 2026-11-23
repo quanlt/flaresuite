@@ -3179,5 +3179,8 @@
 	"mailGuide.thunderbird1": "Accountinstellingen → Accountacties → E-mailaccount toevoegen. Voer je naam, e-mailadres en het app-wachtwoord in; Thunderbird stelt de rest in.",
 	"mailGuide.other": "Andere apps (Gmail op Android, Spark…)",
 	"mailGuide.other1": "Voeg een IMAP-account (‘Andere’) toe en voer de instellingen hieronder in.",
-	"mailGuide.settings": "Serverinstellingen"
+	"mailGuide.settings": "Serverinstellingen",
+	"notFound.title": "Deze pagina bestaat niet",
+	"notFound.body": "De link is misschien oud of verkeerd getypt.",
+	"notFound.home": "Naar Postvak IN"
 }

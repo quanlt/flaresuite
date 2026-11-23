@@ -3179,5 +3179,8 @@
 	"mailGuide.thunderbird1": "Account Settings → Account Actions → Add Mail Account. നിങ്ങളുടെ പേര്, ഇമെയിൽ വിലാസം, ആപ്പ് പാസ്‌വേഡ് എന്നിവ നൽകുക; ബാക്കി Thunderbird സജ്ജമാക്കും.",
 	"mailGuide.other": "മറ്റ് ആപ്പുകൾ (Android-ലെ Gmail, Spark…)",
 	"mailGuide.other1": "ഒരു IMAP (\"Other\") അക്കൗണ്ട് ചേർത്ത് ചുവടെയുള്ള ക്രമീകരണങ്ങൾ നൽകുക.",
-	"mailGuide.settings": "സെർവർ ക്രമീകരണങ്ങൾ"
+	"mailGuide.settings": "സെർവർ ക്രമീകരണങ്ങൾ",
+	"notFound.title": "ഈ പേജ് നിലവിലില്ല",
+	"notFound.body": "ലിങ്ക് പഴയതോ തെറ്റായി ടൈപ്പ് ചെയ്തതോ ആകാം.",
+	"notFound.home": "ഇൻബോക്സിലേക്ക് പോകുക"
 }

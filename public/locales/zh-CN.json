@@ -3161,5 +3161,8 @@
 	"mailGuide.thunderbird1": "账户设置 → 账户操作 → 添加邮件账户。输入你的姓名、电子邮件地址和应用专用密码，其余由 Thunderbird 自动设置。",
 	"mailGuide.other": "其他应用（Android 上的 Gmail、Spark…）",
 	"mailGuide.other1": "添加一个 IMAP（“其他”）账户并输入下方的设置。",
-	"mailGuide.settings": "服务器设置"
+	"mailGuide.settings": "服务器设置",
+	"notFound.title": "此页面不存在",
+	"notFound.body": "链接可能已失效或输入有误。",
+	"notFound.home": "前往收件箱"
 }

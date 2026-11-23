@@ -3179,5 +3179,8 @@
 	"mailGuide.thunderbird1": "Konten-Einstellungen → Konten-Aktionen → E-Mail-Konto hinzufügen. Geben Sie Ihren Namen, Ihre E-Mail-Adresse und das App-Passwort ein; Thunderbird richtet den Rest ein.",
 	"mailGuide.other": "Andere Apps (Gmail auf Android, Spark…)",
 	"mailGuide.other1": "Fügen Sie ein IMAP-Konto („Andere“) hinzu und geben Sie die Einstellungen unten ein.",
-	"mailGuide.settings": "Servereinstellungen"
+	"mailGuide.settings": "Servereinstellungen",
+	"notFound.title": "Diese Seite gibt es nicht",
+	"notFound.body": "Der Link ist vielleicht veraltet oder falsch geschrieben.",
+	"notFound.home": "Zum Posteingang"
 }

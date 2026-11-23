@@ -3161,5 +3161,8 @@
 	"mailGuide.thunderbird1": "Account Settings → Account Actions → Add Mail Account. Masukkan nama, alamat email, dan kata sandi aplikasi Anda; Thunderbird menyiapkan sisanya.",
 	"mailGuide.other": "Aplikasi lain (Gmail di Android, Spark…)",
 	"mailGuide.other1": "Tambahkan akun IMAP (\"Other\") dan masukkan pengaturan di bawah.",
-	"mailGuide.settings": "Pengaturan server"
+	"mailGuide.settings": "Pengaturan server",
+	"notFound.title": "Halaman ini tidak ada",
+	"notFound.body": "Tautannya mungkin sudah lama atau salah ketik.",
+	"notFound.home": "Buka Kotak Masuk"
 }
