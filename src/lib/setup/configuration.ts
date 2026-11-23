@@ -15,11 +15,21 @@ export function getSetupRequirementChecks(env: CloudflareEnv): SetupRequirementC
 				configured: !!env.DB,
 				message: database.driver === "d1" ? "DATA_DIR must be writable; the SQLite database is created there on start." : "DATABASE_URL must be reachable; migrations are applied on start.",
 			},
-			{
-				key: "Outbound mail",
-				configured: mailer?.configured === true,
-				message: "Set SMTP_URL, or CF_ACCOUNT_ID with CF_TOKEN to send through Cloudflare. Receiving works without it.",
-			},
+			// A managed (hosted) workspace sends through the provider each domain picks (Resend, SES) after setup,
+			// so a server-wide mailer is optional there.
+			env.MANAGED_PLAN?.trim()
+				? {
+					key: "Outbound mail (optional)",
+					configured: true,
+					message: mailer?.configured === true
+						? "A server-wide mailer is configured."
+						: "Choose a sending provider (Resend or Amazon SES) for each domain on the Domains page after setup.",
+				}
+				: {
+					key: "Outbound mail",
+					configured: mailer?.configured === true,
+					message: "Set SMTP_URL, or CF_ACCOUNT_ID with CF_TOKEN to send through Cloudflare. Receiving works without it.",
+				},
 			{
 				key: "Cloudflare API credentials (optional)",
 				configured: true,

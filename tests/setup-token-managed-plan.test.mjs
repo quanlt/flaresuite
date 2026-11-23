@@ -9,7 +9,7 @@ const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const directory = mkdtempSync(join(root, "node_modules", "flaresuite-setup-token-"));
 after(() => rmSync(directory, { recursive: true, force: true }));
 await build({
-	stdin: { contents: `export * from "./src/lib/auth/setup-token.ts"; export { readManagedPlan } from "./src/lib/licenses/utils.ts";`, resolveDir: root, sourcefile: "entry.ts" },
+	stdin: { contents: `export * from "./src/lib/auth/setup-token.ts"; export { readManagedPlan } from "./src/lib/licenses/utils.ts"; export { resolveAppName } from "./src/lib/branding/utils.ts"; export { getSetupRequirementChecks } from "./src/lib/setup/configuration.ts";`, resolveDir: root, sourcefile: "entry.ts" },
 	outfile: join(directory, "entry.mjs"), bundle: true, platform: "node", format: "esm", target: "node24",
 	tsconfig: join(root, "tsconfig.json"), packages: "external", logLevel: "silent",
 });
@@ -43,4 +43,20 @@ test("managed plans come only from pro or team with an optional seat limit", () 
 	assert.deepEqual(m.readManagedPlan({ MANAGED_PLAN: "Team" }), { plan: "team", seatLimit: null });
 	assert.deepEqual(m.readManagedPlan({ MANAGED_PLAN: "pro", MANAGED_SEAT_LIMIT: "5" }), { plan: "pro", seatLimit: 5 });
 	assert.deepEqual(m.readManagedPlan({ MANAGED_PLAN: "pro", MANAGED_SEAT_LIMIT: "0" }), { plan: "pro", seatLimit: null });
+});
+
+test("the legacy seeded name counts as the default FlareSuite name", () => {
+	assert.equal(m.resolveAppName("Mailflare"), "FlareSuite");
+	assert.equal(m.resolveAppName(null), "FlareSuite");
+	assert.equal(m.resolveAppName("  "), "FlareSuite");
+	assert.equal(m.resolveAppName("Acme Mail"), "Acme Mail");
+});
+
+test("a managed workspace does not need a server-wide mailer to finish setup", () => {
+	const nodeEnv = (extra) => ({ MAILFLARE_RUNTIME: "node", DB: {}, EMAIL: { configured: false }, ...extra });
+	const selfHosted = m.getSetupRequirementChecks(nodeEnv({}));
+	assert.equal(selfHosted.find((check) => check.key === "Outbound mail").configured, false);
+	const managed = m.getSetupRequirementChecks(nodeEnv({ MANAGED_PLAN: "pro" }));
+	assert.ok(managed.every((check) => check.configured), JSON.stringify(managed));
+	assert.match(managed.find((check) => check.key.startsWith("Outbound mail")).message, /Resend|SES/);
 });
