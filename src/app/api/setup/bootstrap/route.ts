@@ -25,6 +25,8 @@ const bootstrapSchema = z.object({
 	email: z.string().email().max(254),
 	name: z.string().trim().min(1).max(100),
 	passwordHash: z.string().regex(/^\$2[aby]\$\d{2}\$[./A-Za-z0-9]{53}$/),
+	/** The customer's personal address: workspace password resets go there until the domain receives mail. */
+	resetEmail: z.string().email().max(254).nullable().optional(),
 });
 
 export async function POST(request: Request) {
@@ -61,6 +63,7 @@ export async function POST(request: Request) {
 		remoteContentMode: "ask",
 		email,
 		passwordHash: parsed.data.passwordHash,
+		resetEmail: parsed.data.resetEmail?.toLowerCase() ?? null,
 		name: parsed.data.name,
 		role: "admin",
 		isPrimaryAdmin: true,

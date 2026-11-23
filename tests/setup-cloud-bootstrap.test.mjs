@@ -42,13 +42,14 @@ async function fixture(t, extraEnv = { SETUP_TOKEN: "tok-123" }) {
 	}));
 	return { database, call };
 }
-const BODY = { email: "Admin@Acme.com", name: "Ada Lovelace", passwordHash: HASH };
+const BODY = { email: "Admin@Acme.com", name: "Ada Lovelace", passwordHash: HASH, resetEmail: "Ada@Personal.test" };
 
 test("creates the administrator, mailbox and a manually managed domain", async (t) => {
 	const f = await fixture(t);
 	const response = await f.call(BODY);
 	assert.equal(response.status, 200, JSON.stringify(await response.clone().json()));
-	const user = f.database.db.prepare("SELECT email, name, role, is_primary_admin, password_hash FROM users").get();
+	const user = f.database.db.prepare("SELECT email, name, role, is_primary_admin, password_hash, reset_email FROM users").get();
+	assert.equal(user.reset_email, "ada@personal.test");
 	assert.equal(user.email, "admin@acme.com");
 	assert.equal(user.name, "Ada Lovelace");
 	assert.equal(user.role, "admin");
@@ -79,4 +80,5 @@ test("accepts only a bcrypt hash and a valid address", async (t) => {
 	assert.equal((await f.call({ ...BODY, passwordHash: "correct-horse" })).status, 400);
 	assert.equal((await f.call({ ...BODY, email: "admin@localhost" })).status, 400);
 	assert.equal((await f.call({ ...BODY, name: " " })).status, 400);
+	assert.equal((await f.call({ ...BODY, resetEmail: "nope" })).status, 400);
 });
