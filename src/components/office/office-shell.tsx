@@ -20,6 +20,7 @@ import { officeApp } from "./office-apps";
 import { copyOfficeDocument, createOfficeDocument, trashOfficeDocument } from "./office-requests";
 import type { OfficeSaveState } from "./office-types";
 import type { OfficeDocumentController } from "./use-office-document";
+import { OfficeMenuButton, useRegisteredOfficeMenus } from "./office-menus";
 
 const menuItemClass = "flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-sm text-neutral-700 outline-none data-[highlighted]:bg-neutral-100 data-[disabled]:cursor-default data-[disabled]:opacity-50";
 
@@ -63,6 +64,7 @@ export function OfficeShell<K extends OfficeKind>({ kind, controller, getContent
 	const { state, saveState } = controller;
 	const [sharing, setSharing] = useState<DriveItemDto | null>(null);
 	const [title, setTitle] = useState<string | null>(null);
+	const menus = useRegisteredOfficeMenus();
 	if (state.status !== "ready") return null;
 	const { item, role } = state;
 	const canEdit = canEditDrive(role) && !item.trashedAt;
@@ -129,7 +131,7 @@ export function OfficeShell<K extends OfficeKind>({ kind, controller, getContent
 					<AccessBadge role={role} item={item} />
 					<SaveStatus state={saveState} onRetry={() => void controller.save()} />
 				</div>
-				<nav className="flex items-center gap-0.5 text-sm" aria-label={t("office.menu")}>
+				<nav className="flex items-center gap-0.5 overflow-x-auto text-sm" aria-label={t("office.menu")}>
 					<DropdownMenu.Root>
 						<DropdownMenu.Trigger className="rounded-md px-2 py-0.5 text-neutral-700 outline-none hover:bg-neutral-100 data-[state=open]:bg-neutral-100">{t("office.fileMenu")}</DropdownMenu.Trigger>
 						<DropdownMenu.Portal>
@@ -160,6 +162,7 @@ export function OfficeShell<K extends OfficeKind>({ kind, controller, getContent
 							</DropdownMenu.Content>
 						</DropdownMenu.Portal>
 					</DropdownMenu.Root>
+					{menus.map((menu) => <OfficeMenuButton key={menu.id} menu={menu} />)}
 				</nav>
 			</div>
 			{role === "owner" ? (

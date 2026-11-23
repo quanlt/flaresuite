@@ -12,6 +12,7 @@ import type { OfficeContentMap, OfficeKind } from "@/lib/office/types";
 import { officeEditorPath } from "@/lib/office/utils";
 import { officeApp } from "./office-apps";
 import { OfficeShell } from "./office-shell";
+import { OfficeMenusProvider } from "./office-menus";
 import { useOfficeDocument } from "./use-office-document";
 
 /** One open document: shared header, conflict and error banners, and the app's editor. */
@@ -57,6 +58,7 @@ export function OfficeEditorPage<K extends OfficeKind>({ id, kind }: { id: strin
 	const readOnly = !canEditDrive(state.role) || !!state.item.trashedAt || saveState === "readonly";
 
 	return (
+		<OfficeMenusProvider>
 		<div className="flex h-dvh flex-col overflow-hidden bg-[#f8f9fa] print:block print:h-auto print:overflow-visible print:bg-white">
 			<Toaster position="bottom-left" containerClassName="text-sm print:hidden" />
 			<OfficeShell kind={kind} controller={controller} getContent={() => contentRef.current} />
@@ -77,5 +79,6 @@ export function OfficeEditorPage<K extends OfficeKind>({ id, kind }: { id: strin
 				<Editor content={state.content} contentKey={contentKey} onChange={controller.setContent} readOnly={readOnly} name={state.item.name} />
 			</div>
 		</div>
+		</OfficeMenusProvider>
 	);
 }
